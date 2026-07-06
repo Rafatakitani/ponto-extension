@@ -45,9 +45,12 @@ async function refreshTimer(cfg) {
 
 // Avisa popup (runtime) e abas com content script (tabs). Erros de "nenhum
 // receptor" são esperados (popup fechado, aba sem script) — engolir.
+// ⚠️ Sem a permissão "tabs", query com filtro de URL retorna VAZIO (achado na
+// bateria de 06/07) — então mandamos pra TODAS as abas e deixamos o catch
+// descartar as que não têm content script. Mais barato que pedir "tabs".
 function broadcast(message) {
   chrome.runtime.sendMessage(message).catch(() => {});
-  chrome.tabs.query({ url: ["https://github.com/*", "https://linear.app/*"] })
+  chrome.tabs.query({})
     .then((tabs) => { for (const tab of tabs) chrome.tabs.sendMessage(tab.id, message).catch(() => {}); })
     .catch(() => {});
 }
