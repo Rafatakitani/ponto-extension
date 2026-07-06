@@ -1,1 +1,69 @@
-<!doctype html><html><body></body></html>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main id="app">
+    <section id="view-setup" hidden>
+      <p data-i18n="popup_setup_hint"></p>
+      <button id="btn-configure" class="btn" data-i18n="popup_configure"></button>
+    </section>
+
+    <section id="view-error" hidden>
+      <p id="error-message"></p>
+      <div class="row">
+        <button id="btn-retry" class="btn btn--quiet" data-i18n="popup_retry"></button>
+        <button id="btn-error-configure" class="btn" data-i18n="popup_configure" hidden></button>
+      </div>
+    </section>
+
+    <section id="view-running" hidden>
+      <input type="text" id="running-description" data-i18n-placeholder="popup_description_placeholder">
+      <p class="running-project"><i class="dot" id="running-dot" hidden></i><span id="running-project-name"></span></p>
+      <div class="running-row">
+        <span class="clock tabular-nums" id="clock">0:00:00</span>
+        <button id="btn-stop" class="btn btn--danger" data-i18n="popup_stop"></button>
+      </div>
+    </section>
+
+    <section id="view-idle" hidden>
+      <input type="text" id="start-description" data-i18n-placeholder="popup_description_placeholder" autofocus>
+
+      <div class="combo" id="project-combo">
+        <button type="button" class="combo-trigger" id="project-trigger">
+          <i class="dot" id="project-dot" hidden></i><span id="project-label"></span>
+        </button>
+        <div class="combo-panel" id="project-panel" hidden>
+          <input type="text" class="combo-search" id="project-search" data-i18n-placeholder="popup_search_placeholder">
+          <ul class="combo-list" id="project-list"></ul>
+        </div>
+      </div>
+
+      <select id="task-select" hidden></select>
+
+      <div id="tag-chips" class="chips"></div>
+
+      <div class="start-row">
+        <label class="billable"><input type="checkbox" id="billable"><span data-i18n="popup_billable"></span></label>
+        <button id="btn-start" class="btn" data-i18n="popup_start"></button>
+      </div>
+
+      <section id="recent-section" hidden>
+        <h2 data-i18n="popup_recent"></h2>
+        <ul id="recent-list"></ul>
+      </section>
+    </section>
+
+    <p id="toast" role="status" hidden></p>
+
+    <footer>
+      <a id="link-app" target="_blank" data-i18n="popup_open_app"></a>
+      <button id="btn-options" title="⚙" aria-label="⚙">⚙</button>
+    </footer>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
