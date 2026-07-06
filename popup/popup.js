@@ -9,6 +9,13 @@ const send = (type, payload) => chrome.runtime.sendMessage({ type, payload });
 document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
 document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
 
+// Rótulos acessíveis para controles sem <label> visível (aria-label via I18n).
+$("#project-trigger").setAttribute("aria-label", t("popup_project_label"));
+$("#task-select").setAttribute("aria-label", t("popup_task_label"));
+$("#tag-chips").setAttribute("aria-label", t("popup_tags_label"));
+$("#btn-options").title = t("popup_preferences");
+$("#btn-options").setAttribute("aria-label", t("popup_preferences"));
+
 const state = {
   entry: null,            // entry rodando ou null
   catalog: { projects: [], tags: [] },
@@ -172,7 +179,7 @@ function renderRecent() {
     if (e.description) {
       desc.textContent = e.description;
     } else {
-      desc.textContent = t("notif_no_description"); // não há chave popup_no_description; usa a de notif (mesmo texto)
+      desc.textContent = t("popup_no_description");
       desc.classList.add("subtle");
     }
 
@@ -238,9 +245,17 @@ async function stop() {
 }
 
 function fail(res) {
+  // Sem config: manda pro setup, não pra tela de erro.
+  if (res.error === "unconfigured") return show("view-setup");
   show("view-error");
-  const auth = res.error === "auth" || res.error === "unconfigured";
-  $("#error-message").textContent = auth ? t("popup_error_auth") : t("popup_error_network");
+  const auth = res.error === "auth";
+  // Erros conhecidos têm cópia própria; para os demais, mostra a mensagem crua
+  // do servidor (ex.: motivos de 422) em vez do genérico de rede.
+  let message;
+  if (auth) message = t("popup_error_auth");
+  else if (!res.error || res.error === "network" || res.error === "badresponse") message = t("popup_error_network");
+  else message = res.error;
+  $("#error-message").textContent = message;
   $("#btn-error-configure").hidden = !auth;
 }
 
@@ -258,7 +273,11 @@ async function loadRecent() { const r = await send("entries:recent"); if (r.ok) 
 
 async function boot() {
   const cfg = await send("config:get");
-  if (!cfg.ok || !cfg.data.configured) return show("view-setup");
+  if (!cfg.ok || !cfg.data.configured) {
+    // Sem config o link do rodapé não tem destino: esconde pra não ficar morto.
+    $("#link-app").hidden = true;
+    return show("view-setup");
+  }
   send("app:url").then((res) => { if (res.ok) $("#link-app").href = res.data; });
   const [timer, catalog] = await Promise.all([send("timer:get"), send("catalog:get")]);
   if (!timer.ok) return fail(timer);

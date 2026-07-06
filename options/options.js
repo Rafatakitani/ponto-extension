@@ -30,10 +30,17 @@ $("#btn-reveal").addEventListener("click", () => {
 $("#btn-test").addEventListener("click", async () => {
   const apiUrl = normalizedUrl();
   if (!apiUrl) return setStatus(t("options_invalid_url"), "error");
+
+  // Host permission ANTES do fetch: sem ela, o fetch do SW bate em CORS e
+  // reporta "network" mesmo com URL/token válidos. O clique é gesto do usuário,
+  // então o request tem que ser o PRIMEIRO await (senão o gesto é perdido).
+  const granted = await chrome.permissions.request({ origins: [new URL(apiUrl).origin + "/*"] });
+  if (!granted) return setStatus(t("options_perm_denied"), "error");
+
   setStatus("…");
   const res = await chrome.runtime.sendMessage({ type: "config:test", payload: { apiUrl, token: $("#token").value.trim() } });
   if (res.ok) {
-    setStatus(res.data ? t("options_test_ok_running", [res.data.description || t("notif_no_description")]) : t("options_test_ok_idle"), "ok");
+    setStatus(res.data ? t("options_test_ok_running", [res.data.description || t("popup_no_description")]) : t("options_test_ok_idle"), "ok");
   } else if (res.error === "auth") setStatus(t("options_test_fail_auth"), "error");
   else if (res.error === "network") setStatus(t("options_test_fail_network"), "error");
   else setStatus(t("options_test_fail_badresponse"), "error");
@@ -54,5 +61,11 @@ $("#form").addEventListener("submit", async (event) => {
     token: $("#token").value.trim(),
     reminderHours: Number($("#reminder-hours").value)
   });
+
+  // Config nova pode apontar pra outro servidor: descarta cache/snooze antigos e
+  // força um re-sync imediato contra o servidor (possivelmente novo).
+  await chrome.storage.local.remove(["timerCache", "snoozeUntil"]);
+  chrome.runtime.sendMessage({ type: "timer:get" }).catch(() => {});
+
   setStatus(t("options_saved"), "ok");
 });

@@ -13,10 +13,28 @@ async function getConfig() {
 // Fonte da verdade continua o servidor — isto é descartável. Toda escrita
 // mantém badge/alarme coerentes (Task 5) e avisa quem escuta (broadcast).
 async function setTimerCache(entry) {
+  // Só faz broadcast quando a entry MUDA de fato: o tick de 1 min reescreve o
+  // cache toda vez, e um broadcast redundante faz o popup re-renderizar,
+  // atropelando edições em andamento (descrição) e roubando o foco do usuário.
+  const { timerCache } = await chrome.storage.local.get("timerCache");
+  const prev = timerCache?.entry ?? null;
+  const changed = timerEntriesDiffer(prev, entry);
+
   await chrome.storage.local.set({ timerCache: { entry, fetchedAt: Date.now() } });
   await updateBadge(entry);
   await scheduleTick(entry);
-  broadcast({ type: "timer:changed", data: entry });
+  if (changed) broadcast({ type: "timer:changed", data: entry });
+}
+
+// Compara duas entries pelos campos que o popup renderiza (presença/ausência
+// inclusa). Mudança de tempo decorrido NÃO conta — o cronômetro tica sozinho.
+function timerEntriesDiffer(a, b) {
+  if (Boolean(a) !== Boolean(b)) return true;
+  if (!a && !b) return false;
+  for (const key of ["id", "description", "project_id", "task_id", "ended_at", "billable"]) {
+    if (a[key] !== b[key]) return true;
+  }
+  return false;
 }
 
 async function refreshTimer(cfg) {
@@ -171,6 +189,12 @@ async function maybeRemind(cfg, entry) {
   if (Date.now() < snoozeUntil) return;
   const elapsed = Date.now() - new Date(entry.started_at).getTime();
   if (elapsed < cfg.reminderHours * 3600000) return;
+
+  // Silencia por uma janela inteira JÁ NA CRIAÇÃO: sem isso, o tick de 1 min
+  // recria a notificação toda vez após o limite (e fechar não adianta). Com o
+  // snooze aqui, cutuca uma vez por janela mesmo que o usuário só dispense.
+  await chrome.storage.local.set({ snoozeUntil: Date.now() + cfg.reminderHours * 3600000 });
+
   chrome.notifications.create("ponto-reminder", {
     type: "basic",
     iconUrl: "assets/icon128.png",

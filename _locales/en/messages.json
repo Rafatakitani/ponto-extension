@@ -10,6 +10,8 @@
   "popup_description_placeholder": { "message": "What are you working on?" },
   "popup_no_project": { "message": "(no project)" },
   "popup_no_task": { "message": "(no task)" },
+  "popup_no_description": { "message": "(no description)" },
+  "popup_preferences": { "message": "Preferences" },
   "popup_project_label": { "message": "Project" },
   "popup_task_label": { "message": "Task" },
   "popup_tags_label": { "message": "Tags" },

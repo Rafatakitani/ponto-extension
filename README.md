@@ -36,7 +36,10 @@ A extensão precisa saber onde está o seu servidor e de um token de escrita:
    preencha:
    - **URL do servidor** — ex.: `https://ponto.exemplo.dev`
    - **Token de acesso** — o token gerado acima
-3. Clique em **Testar conexão** e depois em **Salvar**.
+3. Clique em **Testar conexão** e depois em **Salvar**. Na primeira vez, o
+   navegador pede permissão de acesso ao endereço do servidor (necessária para o
+   teste e para o funcionamento) — aceite. O pedido aparece tanto em **Testar
+   conexão** quanto em **Salvar**.
 
 ## Licença
 
