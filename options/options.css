@@ -1,0 +1,17 @@
+/* Layout da tela de opções — coluna estreita centrada. */
+.options { max-width: 28rem; margin: 3rem auto; padding: 0 1rem; }
+
+/* Cada label é um bloco: rótulo, campo e dica empilhados. */
+label { display: grid; gap: 4px; margin-bottom: 16px; }
+
+small { color: var(--text-subtle); font-size: 12px; }
+
+/* Token: input + botão "revelar" lado a lado. */
+.token-row { display: flex; gap: 8px; }
+
+/* Botões de ação (testar/salvar) lado a lado. */
+.actions { display: flex; gap: 8px; }
+
+/* Feedback do status colorido por resultado. */
+#status.ok { color: var(--accent); }
+#status.error { color: var(--danger); }
