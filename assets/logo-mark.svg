@@ -1,0 +1,116 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Logo de relógio de ponto vintage com cartão perfurado e alavanca</title>
+  <desc id="desc">Símbolo vetorial minimalista inspirado em relógio de ponto antigo, com mostrador analógico, cartão perfurado e alavanca lateral com esfera perfeitamente alinhada.</desc>
+
+  <defs>
+    <style>
+      .dark { fill: #1f2829; }
+      .cream { fill: #f4ead2; }
+      .line { stroke: #1f2829; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .thin { stroke: #1f2829; stroke-width: 4; stroke-linecap: round; fill: none; }
+      .slot { stroke: #f4ead2; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+    </style>
+  </defs>
+
+  <!-- Transparent background by design -->
+
+  <!-- Main punch-clock body -->
+  <rect class="dark" x="248" y="122" width="528" height="620" rx="72"/>
+
+  <!-- Side decorative vents -->
+  <g class="slot">
+    <line x1="230" y1="562" x2="292" y2="562"/>
+    <line x1="230" y1="590" x2="292" y2="590"/>
+    <line x1="230" y1="618" x2="292" y2="618"/>
+
+    <line x1="732" y1="562" x2="794" y2="562"/>
+    <line x1="732" y1="590" x2="794" y2="590"/>
+    <line x1="732" y1="618" x2="794" y2="618"/>
+  </g>
+
+  <!-- Lever mount on right side -->
+  <g id="lever">
+    <!-- body connector -->
+    <rect class="dark" x="770" y="498" width="44" height="146" rx="18"/>
+    <rect class="cream" x="782" y="510" width="16" height="122" rx="8"/>
+
+    <!-- lower hinge bracket -->
+    <path class="dark" d="M798 554 L872 554 Q906 554 906 588 L906 632 Q906 666 872 666 L798 666 Z"/>
+    <path class="cream" d="M812 570 L856 570 Q884 570 884 598 L884 620 Q884 648 856 648 L812 648 Z"/>
+    <circle class="dark" cx="858" cy="610" r="18"/>
+
+    <!-- perfectly straight lever shaft: knob center and shaft center are aligned at x=876 -->
+    <rect class="cream" x="862" y="332" width="28" height="260" rx="14"/>
+    <path class="dark" d="M862 592 L862 332 Q862 320 876 320 Q890 320 890 332 L890 592 Z" fill="none" stroke="#1f2829" stroke-width="12" stroke-linejoin="round"/>
+
+    <!-- perfectly round knob, centered on the shaft -->
+    <circle class="dark" cx="876" cy="304" r="44"/>
+  </g>
+
+  <!-- Clock face -->
+  <circle class="cream" cx="512" cy="350" r="178"/>
+  <circle cx="512" cy="350" r="178" fill="none" stroke="#f4ead2" stroke-width="20"/>
+  <circle cx="512" cy="350" r="158" fill="none" stroke="#1f2829" stroke-width="10"/>
+
+  <!-- Hour marks -->
+  <g class="dark">
+    <rect x="502" y="194" width="20" height="42" rx="3"/>
+    <rect x="502" y="464" width="20" height="42" rx="3"/>
+    <rect x="356" y="340" width="42" height="20" rx="3"/>
+    <rect x="626" y="340" width="42" height="20" rx="3"/>
+
+    <rect x="437" y="218" width="14" height="42" rx="3" transform="rotate(-30 444 239)"/>
+    <rect x="573" y="218" width="14" height="42" rx="3" transform="rotate(30 580 239)"/>
+    <rect x="437" y="440" width="14" height="42" rx="3" transform="rotate(30 444 461)"/>
+    <rect x="573" y="440" width="14" height="42" rx="3" transform="rotate(-30 580 461)"/>
+
+    <rect x="383" y="273" width="14" height="42" rx="3" transform="rotate(-60 390 294)"/>
+    <rect x="627" y="273" width="14" height="42" rx="3" transform="rotate(60 634 294)"/>
+    <rect x="383" y="385" width="14" height="42" rx="3" transform="rotate(60 390 406)"/>
+    <rect x="627" y="385" width="14" height="42" rx="3" transform="rotate(-60 634 406)"/>
+  </g>
+
+  <!-- Clock hands -->
+  <g class="dark" stroke="#1f2829" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="512" y1="350" x2="430" y2="284" stroke-width="28"/>
+    <line x1="512" y1="350" x2="636" y2="270" stroke-width="24"/>
+    <circle cx="512" cy="350" r="26"/>
+  </g>
+
+  <!-- Card slot -->
+  <path class="slot" d="M336 596 V574 Q336 562 348 562 H676 Q688 562 688 574 V596"/>
+  <rect class="dark" x="332" y="570" width="360" height="48" rx="12"/>
+
+  <!-- Punch card -->
+  <path class="cream" d="M360 588 H664 V856 L632 888 H392 L360 856 Z"/>
+  <path class="line" d="M360 588 H664 V856 L632 888 H392 L360 856 Z"/>
+
+  <!-- Card grid -->
+  <g class="thin">
+    <line x1="418" y1="610" x2="418" y2="850"/>
+    <line x1="482" y1="610" x2="482" y2="850"/>
+    <line x1="546" y1="610" x2="546" y2="850"/>
+    <line x1="610" y1="610" x2="610" y2="850"/>
+
+    <line x1="382" y1="642" x2="642" y2="642"/>
+    <line x1="382" y1="680" x2="642" y2="680"/>
+    <line x1="382" y1="718" x2="642" y2="718"/>
+    <line x1="382" y1="756" x2="642" y2="756"/>
+    <line x1="382" y1="794" x2="642" y2="794"/>
+    <line x1="382" y1="832" x2="642" y2="832"/>
+  </g>
+
+  <!-- Punch holes -->
+  <g class="dark">
+    <circle cx="450" cy="664" r="12"/>
+    <circle cx="450" cy="702" r="12"/>
+    <circle cx="450" cy="740" r="12"/>
+    <circle cx="450" cy="778" r="12"/>
+    <circle cx="450" cy="816" r="12"/>
+
+    <circle cx="584" cy="702" r="12"/>
+    <circle cx="584" cy="740" r="12"/>
+    <circle cx="584" cy="778" r="12"/>
+    <circle cx="584" cy="832" r="12"/>
+  </g>
+</svg>

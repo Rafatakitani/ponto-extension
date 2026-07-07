@@ -1,0 +1,20 @@
+<svg role="img" aria-label="Ponto" width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect fill="#0d5c63" x="16" y="16" width="992" height="992" rx="220"/>
+  <circle fill="#f4ead2" cx="512" cy="410" r="310"/>
+  <g fill="#1f2829">
+    <rect x="488" y="140" width="48" height="90" rx="10"/>
+    <rect x="488" y="590" width="48" height="90" rx="10"/>
+    <rect x="222" y="386" width="90" height="48" rx="10"/>
+    <rect x="712" y="386" width="90" height="48" rx="10"/>
+  </g>
+  <g stroke="#1f2829" stroke-linecap="round">
+    <line x1="512" y1="410" x2="512" y2="205" stroke-width="64"/>
+    <line x1="512" y1="410" x2="650" y2="480" stroke-width="52"/>
+    <circle cx="512" cy="410" r="52" fill="#1f2829"/>
+  </g>
+  <path fill="#f4ead2" d="M320 790 H704 V1008 H320 Z"/>
+  <g fill="#1f2829">
+    <circle cx="440" cy="860" r="30"/><circle cx="440" cy="950" r="30"/>
+    <circle cx="590" cy="900" r="30"/>
+  </g>
+</svg>
