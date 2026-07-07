@@ -2,6 +2,25 @@
 
 body { width: 340px; }
 
+/* Header da marca — espelha o shell-mobile-header do webapp: logo + "Ponto" numa
+   barra recuada, com a linha teal (acento) no topo e borda embaixo. */
+#app-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--surface-sunken);
+  border-top: 2px solid var(--accent);
+  border-bottom: 1px solid var(--border);
+}
+.brand-mark { display: block; flex: none; border-radius: 5px; }
+.brand-name {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
 #app {
   padding: 12px;
   display: grid;
@@ -118,7 +137,7 @@ body { width: 340px; }
 #recent-list { list-style: none; margin: 0; padding: 0; }
 .recent-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto auto;
   align-items: center;
   gap: 8px;
   padding: 6px 4px;
@@ -126,10 +145,48 @@ body { width: 340px; }
   cursor: pointer;
 }
 .recent-row:last-child { border-bottom: none; }
-.recent-row:hover, .recent-row:focus {
+.recent-row:hover, .recent-row:focus-within {
   outline: none;
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
+
+/* Ações da linha (dividir + apagar): invisíveis até hover/foco (não roubam o
+   clique de retomar, que é o gesto primário). currentColor + ícones do app. */
+.recent-actions { display: flex; align-items: center; gap: 2px; }
+.recent-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0;
+}
+.recent-row:hover .recent-icon,
+.recent-row:focus-within .recent-icon { opacity: 1; }
+.recent-icon:hover { color: var(--text); background: color-mix(in srgb, var(--border) 45%, transparent); }
+.recent-icon.recent-delete:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.recent-icon:focus-visible { opacity: 1; outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Confirmação inline de apagar (substitui a lixeira: "Apagar? Sim Não") */
+.recent-confirm { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-subtle); }
+.recent-confirm button {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.recent-confirm .yes { border-color: var(--danger); color: var(--danger); }
+.recent-confirm .yes:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .recent-desc {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -150,7 +207,61 @@ body { width: 340px; }
 .recent-duration { font-size: 12px; color: var(--text-subtle); }
 .recent-play { width: 12px; text-align: center; color: var(--accent); }
 .recent-row:hover .recent-play::after,
-.recent-row:focus .recent-play::after { content: "▶"; font-size: 10px; }
+.recent-row:focus-within .recent-play::after { content: "▶"; font-size: 10px; }
+
+/* Link "＋ Lançar tempo" — botão discreto que abre o form manual */
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: start;
+  padding: 4px 2px;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.link-btn:hover { color: var(--accent-hover); }
+
+/* Form de lançamento manual — mesmo idioma visual do resto do popup.
+   Início/Fim/Duração LIGADOS (como no webapp): editar dois recalcula o terceiro. */
+.manual-form { display: grid; gap: 8px; }
+.manual-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.manual-times label {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+/* Duração ocupa a linha inteira abaixo de início/fim */
+.manual-times label:last-child { grid-column: 1 / -1; }
+.manual-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Form de split inline nos recentes (mesmo modelo do menu ⋮ do webapp:
+   "Cortar em" + datetime-local com default no ponto médio + botão Dividir) */
+.recent-split {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 2px;
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+.recent-split input { flex: 1; padding: 4px 8px; font-size: 12px; }
+.recent-split button {
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.recent-split button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
 /* Toast */
 #toast {

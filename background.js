@@ -118,6 +118,28 @@ async function handle(msg) {
       return res;
     }
 
+    // Lançar tempo manualmente (entry finalizada: started_at + ended_at). Não toca
+    // no timer rodando — o popup recarrega os recentes ao voltar pra tela idle.
+    case "entry:create": {
+      return api.createEntry(cfg, msg.payload.attrs);
+    }
+
+    // Apagar uma entry. O popup só oferece delete em entries finalizadas, mas se
+    // por acaso for a que está no cache (a rodando), limpamos badge/alarme.
+    case "entry:delete": {
+      const res = await api.deleteEntry(cfg, msg.payload.id);
+      if (res.ok) {
+        const { timerCache } = await chrome.storage.local.get("timerCache");
+        if (timerCache?.entry?.id === msg.payload.id) await setTimerCache(null);
+      }
+      return res;
+    }
+
+    // Dividir uma entry finalizada em duas no instante `cut`. Servidor responde 204.
+    case "entry:split": {
+      return api.splitEntry(cfg, msg.payload.id, msg.payload.cut);
+    }
+
     case "catalog:get": {
       const [projects, tags] = await Promise.all([api.projects(cfg), api.tags(cfg)]);
       if (!projects.ok) return projects;
@@ -134,6 +156,14 @@ async function handle(msg) {
     case "tasks:get": {
       const res = await api.tasks(cfg, msg.payload.projectId);
       if (res.ok) res.data = (res.data || []).filter((t) => !t.archived_at);
+      return res;
+    }
+
+    // Preferências (theme/accent/locale/time_zone) do servidor. Cacheadas pra o
+    // popup/options aplicarem o tema na hora, sem esperar a rede a cada abertura.
+    case "prefs:get": {
+      const res = await api.preferences(cfg);
+      if (res.ok) await chrome.storage.local.set({ prefsCache: { data: res.data, fetchedAt: Date.now() } });
       return res;
     }
 

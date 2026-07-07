@@ -22,6 +22,22 @@ chrome.storage.local.get(["apiUrl", "token", "reminderHours"]).then((cfg) => {
   $("#reminder-hours").value = cfg.reminderHours ?? 2;
 });
 
+// Tema/acento do servidor no <html> (mesmo modelo do popup): cache na hora,
+// revalida com o servidor. theme "system"/ausente segue o SO.
+function applyPrefs(prefs) {
+  const root = document.documentElement;
+  const theme = prefs?.theme;
+  if (theme === "light" || theme === "dark") root.setAttribute("data-theme", theme);
+  else root.removeAttribute("data-theme");
+  const accent = prefs?.accent;
+  if (accent && accent !== "teal") root.setAttribute("data-accent", accent);
+  else root.removeAttribute("data-accent");
+}
+chrome.storage.local.get("prefsCache").then(({ prefsCache }) => {
+  if (prefsCache?.data) applyPrefs(prefsCache.data);
+  chrome.runtime.sendMessage({ type: "prefs:get" }).then((res) => { if (res?.ok) applyPrefs(res.data); }).catch(() => {});
+});
+
 $("#btn-reveal").addEventListener("click", () => {
   const input = $("#token");
   input.type = input.type === "password" ? "text" : "password";
@@ -64,8 +80,10 @@ $("#form").addEventListener("submit", async (event) => {
 
   // Config nova pode apontar pra outro servidor: descarta cache/snooze antigos e
   // força um re-sync imediato contra o servidor (possivelmente novo).
-  await chrome.storage.local.remove(["timerCache", "snoozeUntil"]);
+  await chrome.storage.local.remove(["timerCache", "snoozeUntil", "prefsCache"]);
   chrome.runtime.sendMessage({ type: "timer:get" }).catch(() => {});
+  // Re-lê preferências do novo servidor e reaplica o tema já nesta tela.
+  chrome.runtime.sendMessage({ type: "prefs:get" }).then((res) => { if (res?.ok) applyPrefs(res.data); }).catch(() => {});
 
   setStatus(t("options_saved"), "ok");
 });

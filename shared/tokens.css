@@ -1,21 +1,37 @@
-/* Tokens do DESIGN.md do Ponto (Catppuccin, claro/escuro automático). */
+/* Tokens do DESIGN.md do Ponto (Catppuccin, claro/escuro). Espelha o app:
+ * cores via light-dark() no :root, tema forçado por [data-theme] (color-scheme)
+ * e acento por [data-accent] — ambos aplicados a partir de GET /preferences pela
+ * extensão. Sem preferência do servidor (theme "system" / offline) segue o SO. */
 :root {
-  --surface: #eff1f5; --surface-raised: #ffffff; --surface-sunken: #e6e9ef;
-  --text: #4c4f69; --text-subtle: #5c5f77;
-  --border: #ccd0da; --border-strong: #acb0be;
-  --accent: #0d7379; --accent-hover: #0a5d62; --on-accent: #ffffff;
-  --danger: #d20f39; --on-danger: #ffffff;
+  color-scheme: light dark;
+
+  --surface: light-dark(#eff1f5, #1e1e2e);
+  --surface-raised: light-dark(#ffffff, #313244);
+  --surface-sunken: light-dark(#e6e9ef, #181825);
+  --text: light-dark(#4c4f69, #cdd6f4);
+  --text-subtle: light-dark(#5c5f77, #a6adc8);
+  --border: light-dark(#ccd0da, #313244);
+  --border-strong: light-dark(#acb0be, #45475a);
+  --accent: light-dark(#0d7379, #94e2d5);
+  --accent-hover: light-dark(#0a5d62, #a9e9de);
+  --on-accent: light-dark(#ffffff, #11111b);
+  --danger: light-dark(#d20f39, #f38ba8);
+  --on-danger: light-dark(#ffffff, #11111b);
   --radius: 6px; --radius-sm: 4px;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --surface: #1e1e2e; --surface-raised: #313244; --surface-sunken: #181825;
-    --text: #cdd6f4; --text-subtle: #a6adc8;
-    --border: #313244; --border-strong: #45475a;
-    --accent: #94e2d5; --accent-hover: #a9e9de; --on-accent: #11111b;
-    --danger: #f38ba8; --on-danger: #11111b;
-  }
-}
+
+/* Tema forçado pelo servidor (light/dark). "system" não seta data-theme e cai no
+ * color-scheme herdado (prefers-color-scheme do SO). */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"]  { color-scheme: dark; }
+
+/* Acentos do usuário (mesmos valores do app; teal é o default do :root). */
+:root[data-accent="mauve"] { --accent: light-dark(#8839ef, #cba6f7); --accent-hover: light-dark(#7326d3, #d7bbf9); }
+:root[data-accent="blue"]  { --accent: light-dark(#1a5ce0, #89b4fa); --accent-hover: light-dark(#1550c4, #a3c5fb); }
+:root[data-accent="green"] { --accent: light-dark(#2b7222, #a6e3a1); --accent-hover: light-dark(#235e1c, #b8eab4); }
+:root[data-accent="peach"] { --accent: light-dark(#b34700, #fab387); --accent-hover: light-dark(#9a3d00, #fbc19e); }
+:root[data-accent="pink"]  { --accent: light-dark(#b8368f, #f5c2e7); --accent-hover: light-dark(#9c2d79, #f8d3ee); }
+
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--surface); color: var(--text);
@@ -33,7 +49,7 @@ body {
 .btn.btn--quiet:hover { background: color-mix(in srgb, var(--border) 45%, transparent); }
 .btn.btn--danger { background: var(--danger); color: var(--on-danger); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
-input[type="text"], input[type="url"], input[type="password"], input[type="number"], select {
+input[type="text"], input[type="url"], input[type="password"], input[type="number"], input[type="datetime-local"], select {
   width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--surface-raised); color: var(--text); font: inherit; appearance: none;
 }
