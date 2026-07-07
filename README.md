@@ -1,6 +1,6 @@
-<!-- Docs em português. Docs are in Portuguese. -->
-
 # Ponto — extensão para Chrome
+
+**🇧🇷 Português** · [🇺🇸 English](#-english)
 
 Companheira do [Ponto](https://github.com/alextakitani/ponto), o time-tracker
 self-hosted. Traz o timer pra dentro do navegador:
@@ -45,3 +45,49 @@ A extensão precisa saber onde está o seu servidor e de um token de escrita:
 
 O'Saasy — mesma licença do app Ponto. Código aberto, mas **proibido revender como
 SaaS**. Veja o `LICENSE.md` do app para os termos completos.
+
+---
+
+## 🇺🇸 English
+
+[🇧🇷 Português](#ponto--extensão-para-chrome) · **🇺🇸 English**
+
+Companion to [Ponto](https://github.com/alextakitani/ponto), the self-hosted time
+tracker. It brings the timer into your browser:
+
+- **Timer popup** — start/stop from any tab, with project, task, tags and billable.
+- **Badge** on the icon shows the running timer.
+- **Global shortcut** (`Ctrl+Shift+Space`) to start/stop without opening the popup.
+- **Forgotten-timer reminder** — warns when the timer has been running past N hours.
+- **Buttons injected into GitHub and Linear** — start a timer pre-filled with the
+  issue/PR description.
+
+Manifest V3 extension, zero-build (no Node, no bundler — files served as-is).
+
+### Install
+
+1. Download/clone this repository.
+2. Open `chrome://extensions`.
+3. Turn on **Developer mode** (top-right corner).
+4. Click **Load unpacked** and point it at the repository folder.
+5. Ponto's teal icon shows up in the toolbar.
+
+### Configuration
+
+The extension needs to know where your server is and a write token:
+
+1. In the Ponto app, go to **Preferences → Tokens** and generate a token with
+   **write** permission.
+2. In the extension options (right-click the icon → **Options**, or
+   `chrome://extensions` → Ponto → **Details** → **Extension options**), fill in:
+   - **Server URL** — e.g. `https://ponto.example.dev`
+   - **Access token** — the token generated above
+3. Click **Test connection** and then **Save**. The first time, the browser asks
+   for permission to access the server's address (required for the test and for it
+   to work) — accept it. The prompt appears both on **Test connection** and on
+   **Save**.
+
+### License
+
+O'Saasy — same license as the Ponto app. Open source, but **you may not resell it as
+a SaaS**. See the app's `LICENSE.md` for the full terms.
