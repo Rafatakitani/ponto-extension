@@ -71,10 +71,11 @@ function renderCompose() {
   card.dataset.running = running ? "true" : "false";
   card.dataset.mode = state.mode;
 
-  // Visibilidade por estado.
+  // Visibilidade por estado. A meta-row (projeto/task/tags/faturável) fica SEMPRE
+  // visível — inclusive rodando, pra editar no meio do timer (cada mudança faz
+  // PATCH na entry rodando). O resumo read-only foi aposentado.
   $("#compose-eyebrow").hidden = !(state.mode === "manual" && !running);
-  $("#meta-row").hidden = running;                 // rodando → resumo read-only
-  $("#run-summary").hidden = !running;
+  $("#meta-row").hidden = false;
   $("#run-timer").hidden = !running;
   $("#manual-times").hidden = running || state.mode !== "manual";
   $("#btn-primary").hidden = false;
@@ -104,19 +105,26 @@ function renderRunning() {
   const entry = state.entry;
   $("#description").value = entry.description || "";
 
-  // Resumo read-only: dot · projeto · tags · $
-  const summary = $("#run-summary");
-  summary.innerHTML = "";
-  const project = projectOf(entry);
-  if (project) {
-    const dot = document.createElement("i"); dot.className = "dot"; dot.style.background = project.color;
-    summary.appendChild(dot);
+  // Espelha o estado de edição no que a entry rodando tem, pra a meta-row já vir
+  // preenchida e editável (cada mudança faz PATCH). Só sincroniza uma vez por
+  // entry (marca no dataset) pra não sobrescrever uma edição em andamento.
+  if ($("#compose").dataset.syncedEntry !== String(entry.id)) {
+    $("#compose").dataset.syncedEntry = String(entry.id);
+    state.projectId = entry.project_id ?? null;
+    state.taskId = entry.task_id ?? null;
+    state.tagIds = new Set((entry.tag_ids) || (entry.tags || []).map((x) => x.id));
+    $("#btn-billable").dataset.touched = "1";
+    $("#btn-billable").setAttribute("aria-pressed", entry.billable ? "true" : "false");
+    // Carrega as tasks do projeto da entry (pro picker de task funcionar).
+    if (state.projectId != null) {
+      send("tasks:get", { projectId: state.projectId }).then((res) => {
+        if (res.ok) { state.tasks = res.data; renderProjectChip(); }
+      });
+    } else { state.tasks = []; }
   }
-  const parts = [project ? project.name : t("popup_no_project")];
-  const tagNames = (entry.tags || []).map((x) => x.name);
-  if (tagNames.length) parts.push(tagNames.join(", "));
-  if (entry.billable) parts.push("$");
-  summary.appendChild(document.createTextNode(parts.join(" · ")));
+  renderProjectChip();
+  renderTagsChip();
+  renderBillableChip();
 
   $("#run-started").textContent = t("popup_started_at", formatClockTime(new Date(entry.started_at)));
 
@@ -124,6 +132,14 @@ function renderRunning() {
   const tick = () => { $("#clock").textContent = formatDuration((Date.now() - new Date(entry.started_at).getTime()) / 1000); };
   tick();
   state.clockHandle = setInterval(tick, 500);
+}
+
+// Persiste um atributo da entry RODANDO (PATCH). Usado quando a meta-row é editada
+// no meio do timer. Atualiza o cache local da entry pra o render seguir coerente.
+function patchRunning(attrs) {
+  if (!state.entry) return;
+  Object.assign(state.entry, attrs);
+  send("entry:update", { id: state.entry.id, attrs });
 }
 
 // --- Meta chips ---------------------------------------------------------------
@@ -231,6 +247,8 @@ async function selectProject(projectId) {
     const res = await send("tasks:get", { projectId });
     if (res.ok) state.tasks = res.data;
   }
+  // Rodando: persiste na entry (trocar projeto re-congela a rate no servidor).
+  if (state.entry) patchRunning({ project_id: projectId, task_id: null });
   renderProjectChip();
   renderBillableChip();
   // Se o projeto tem tasks, dobra o painel pra escolher a task; senão fecha.
@@ -248,6 +266,7 @@ async function selectProject(projectId) {
 
 function selectTask(taskId) {
   state.taskId = taskId;
+  if (state.entry) patchRunning({ task_id: taskId });
   const panel = $("#project-panel");
   panel.hidden = true;
   panel.dataset.screen = "projects";
@@ -273,6 +292,7 @@ function renderTagsPanel(filter = "") {
       if (state.tagIds.has(tag.id)) { state.tagIds.delete(tag.id); li.removeAttribute("aria-selected"); }
       else { state.tagIds.add(tag.id); li.setAttribute("aria-selected", "true"); }
       renderTagsChip();
+      persistTagsIfRunning();
     });
     list.appendChild(li);
   }
@@ -302,10 +322,16 @@ async function createTag(name) {
     $("#tags-search").value = "";
     renderTagsPanel();
     renderTagsChip();
+    persistTagsIfRunning();
     $("#tags-search").focus();
   } else if (res.status === 422) {
     toast(res.error || t("popup_tag_create_failed"));
   } else fail(res);
+}
+
+// PATCH tag_ids na entry rodando (a meta-row é editável no meio do timer).
+function persistTagsIfRunning() {
+  if (state.entry) patchRunning({ tag_ids: [...state.tagIds] });
 }
 
 // --- Ledger por dia -----------------------------------------------------------
@@ -666,10 +692,33 @@ async function loadEntries() {
 
 function enterIdle() {
   clearInterval(state.clockHandle);
+  resetCompose();
   show("view-main");
   renderCompose();
   renderLedger();
   $("#description").focus();
+}
+
+// Zera o card pro próximo timer: descrição, projeto/task/tags/faturável e o marcador
+// de sync da entry rodando. Sem isso, o texto/estado da entry anterior vazava pra
+// a próxima (bug: descrição não limpava após o stop).
+function resetCompose() {
+  $("#description").value = "";
+  state.taskId = null;
+  state.tasks = [];
+  state.tagIds = new Set();
+  // Projeto volta pro default do servidor (mesmo critério do boot).
+  const def = state.catalog.projects.find((p) => p.default);
+  state.projectId = def ? def.id : null;
+  delete $("#btn-billable").dataset.touched;
+  $("#btn-billable").setAttribute("aria-pressed", "false");
+  delete $("#compose").dataset.syncedEntry;
+  // Carrega tasks do projeto default (quieto) pro picker já ter opções.
+  if (state.projectId != null) {
+    send("tasks:get", { projectId: state.projectId }).then((res) => {
+      if (res.ok) { state.tasks = res.data; renderProjectChip(); }
+    });
+  }
 }
 
 function applyPrefs(prefs) {
@@ -737,6 +786,7 @@ $("#btn-billable").addEventListener("click", () => {
   const on = billableOn();
   $("#btn-billable").dataset.touched = "1";
   $("#btn-billable").setAttribute("aria-pressed", on ? "false" : "true");
+  if (state.entry) patchRunning({ billable: !on });
 });
 
 // Campos manuais ligados.

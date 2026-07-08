@@ -205,15 +205,7 @@ body { width: 360px; }
   margin-top: 4px;
 }
 
-/* ── Estado RODANDO: resumo read-only + linha do timer ──────────────────── */
-.run-summary {
-  margin: 2px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-subtle);
-}
+/* ── Estado RODANDO: meta-row editável (acima) + linha do timer ──────────── */
 .run-timer {
   display: flex;
   align-items: baseline;
@@ -261,7 +253,7 @@ body { width: 360px; }
 
 /* Troca de modo/estado: crossfade suave, sem animar altura. */
 @media (prefers-reduced-motion: no-preference) {
-  .compose-action, .meta-row, .run-summary, .run-timer, .manual-times, .compose-eyebrow {
+  .compose-action, .meta-row, .run-timer, .manual-times, .compose-eyebrow {
     animation: fade-swap 120ms ease-out;
   }
 }
