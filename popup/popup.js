@@ -8,7 +8,6 @@ const send = (type, payload) => chrome.runtime.sendMessage({ type, payload });
 
 // Ícones do Lucide (mesmos do app Ponto); currentColor herda a cor do texto.
 const ICON_TRASH = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
-const ICON_SCISSORS = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>';
 const ICON_PLAY = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
 const ICON_MORE = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>';
 
@@ -38,7 +37,6 @@ const state = {
   catalog: { projects: [], tags: [] },
   tasks: [],              // tasks do projeto selecionado
   entries: [],            // 1ª página do histórico (finalizadas), started_at DESC
-  entriesPage: null,      // paginação do /time_entries (X-Total-*) ou null
   projectId: null, taskId: null, tagIds: new Set(),
   mode: "timer",          // "timer" | "manual"
   clockHandle: null
@@ -82,18 +80,18 @@ function renderCompose() {
   $("#btn-primary").hidden = false;
 
   // Ícone do botão redondo: ■ rodando · ＋ manual · ▶ timer.
-  const play = $("#btn-primary .ico-play");
-  const stop = $("#btn-primary .ico-stop");
-  const add = $("#btn-primary .ico-add");
-  play.hidden = running || state.mode === "manual";
-  stop.hidden = !running;
-  add.hidden = running || state.mode !== "manual";
+  // NB: em SVG a IDL property `.hidden` NÃO reflete pro atributo `hidden` (só em
+  // HTML), então o seletor [hidden] do CSS não pegaria. Usamos toggleAttribute.
+  const setHidden = (el, on) => el.toggleAttribute("hidden", on);
+  setHidden($("#btn-primary .ico-play"), running || state.mode === "manual");
+  setHidden($("#btn-primary .ico-stop"), !running);
+  setHidden($("#btn-primary .ico-add"), running || state.mode !== "manual");
   $("#btn-primary").setAttribute("aria-label",
     running ? t("popup_stop") : state.mode === "manual" ? t("popup_manual_save") : t("popup_start"));
 
   // Ícone do toggle de modo (relógio no manual → volta pro timer).
-  $("#btn-mode .ico-mode-manual").hidden = state.mode === "manual";
-  $("#btn-mode .ico-mode-timer").hidden = state.mode !== "manual";
+  setHidden($("#btn-mode .ico-mode-manual"), state.mode === "manual");
+  setHidden($("#btn-mode .ico-mode-timer"), state.mode !== "manual");
   $("#btn-mode").setAttribute("aria-label", state.mode === "manual" ? t("popup_mode_timer") : t("popup_mode_manual"));
   $("#btn-mode").title = $("#btn-mode").getAttribute("aria-label");
   $("#btn-mode").hidden = running;
@@ -261,9 +259,9 @@ function selectTask(taskId) {
 function renderTagsPanel(filter = "") {
   const list = $("#tags-list");
   list.innerHTML = "";
-  const tags = state.catalog.tags.filter((tag) => !tag.archived_at)
-    .filter((tag) => !filter || normalize(tag.name).includes(normalize(filter)));
-  for (const tag of tags) {
+  const active = state.catalog.tags.filter((tag) => !tag.archived_at);
+  const shown = active.filter((tag) => !filter || normalize(tag.name).includes(normalize(filter)));
+  for (const tag of shown) {
     const li = document.createElement("li");
     li.tabIndex = -1;
     li.dataset.id = String(tag.id);
@@ -278,6 +276,36 @@ function renderTagsPanel(filter = "") {
     });
     list.appendChild(li);
   }
+
+  // "+ Criar 'X'": aparece quando há texto e nenhuma tag EXISTENTE bate exatamente
+  // (case/acento-insensitive). Cria no servidor e já marca na seleção.
+  const term = filter.trim();
+  const exact = term && active.some((tag) => normalize(tag.name) === normalize(term));
+  if (term && !exact) {
+    const li = document.createElement("li");
+    li.tabIndex = -1;
+    li.className = "combo-create";
+    li.appendChild(document.createTextNode(t("popup_tag_create", term)));
+    li.addEventListener("click", () => createTag(term));
+    list.appendChild(li);
+  }
+}
+
+// Cria a tag no servidor, adiciona ao catálogo, marca na seleção e re-renderiza.
+async function createTag(name) {
+  const res = await send("tag:create", { name });
+  if (res.ok) {
+    const tag = res.data;
+    // Evita duplicar no catálogo se o servidor devolver uma já existente.
+    if (!state.catalog.tags.some((x) => x.id === tag.id)) state.catalog.tags.push(tag);
+    state.tagIds.add(tag.id);
+    $("#tags-search").value = "";
+    renderTagsPanel();
+    renderTagsChip();
+    $("#tags-search").focus();
+  } else if (res.status === 422) {
+    toast(res.error || t("popup_tag_create_failed"));
+  } else fail(res);
 }
 
 // --- Ledger por dia -----------------------------------------------------------
@@ -305,39 +333,29 @@ function startOfWeek(now) {
 function renderLedger() {
   const ledger = $("#ledger");
   ledger.innerHTML = "";
-  const finished = state.entries.filter((e) => e.ended_at && e.duration_seconds != null);
-
-  $("#ledger-empty").hidden = finished.length > 0;
-  $("#week-line").hidden = finished.length === 0;
-  if (finished.length === 0) return;
-
-  // Total da semana atual. O /time_entries é PAGINADO (Q73): temos só a 1ª página
-  // (started_at DESC, até 100). A semana atual é a mais recente → coberta, EXCETO
-  // se a página foi truncada E a entry mais antiga ainda cai dentro da semana (a
-  // própria semana passou de uma página). Nesse caso não afirmamos total errado:
-  // rotula "Recentes" sem número. Na prática, com 100 entries, quase nunca dispara.
+  // Ledger da semana atual. O SERVIDOR já filtra por `?since=segunda 00:00` (janela
+  // fechada → total exato), mas ainda filtramos aqui por dois motivos: excluir o
+  // timer RODANDO (vem no array, sem ended_at) e ser um cinto de segurança se o
+  // fetch trouxer algo fora da janela. O rótulo "Esta semana" bate com o conteúdo.
   const weekStart = startOfWeek(new Date());
-  const oldest = new Date(finished[finished.length - 1].started_at).getTime();
-  const truncated = state.entriesPage?.nextPage != null;
-  const weekCovered = !truncated || oldest < weekStart;
+  const week = state.entries
+    .filter((e) => e.ended_at && e.duration_seconds != null)
+    .filter((e) => new Date(e.started_at).getTime() >= weekStart);
 
-  const label = $("#week-line").querySelector(".week-label");
-  const totalEl = $("#week-total");
-  if (weekCovered) {
-    const weekTotal = finished
-      .filter((e) => new Date(e.started_at).getTime() >= weekStart)
-      .reduce((sum, e) => sum + e.duration_seconds, 0);
-    label.textContent = t("popup_this_week");
-    totalEl.textContent = formatHM(weekTotal);
-    totalEl.hidden = false;
-  } else {
-    label.textContent = t("popup_recent_label");
-    totalEl.hidden = true;
-  }
+  // Vazio: esconde o ledger (senão reservaria 360px em branco) e mostra o convite.
+  $("#ledger").hidden = week.length === 0;
+  $("#ledger-empty").hidden = week.length > 0;
+  $("#week-line").hidden = week.length === 0;
+  if (week.length === 0) return;
+
+  const weekTotal = week.reduce((sum, e) => sum + e.duration_seconds, 0);
+  $("#week-line").querySelector(".week-label").textContent = t("popup_this_week");
+  $("#week-total").textContent = formatHM(weekTotal);
+  $("#week-total").hidden = false;
 
   // Agrupa por dia (started_at DESC já vem do servidor).
   const groups = new Map();
-  for (const e of finished) {
+  for (const e of week) {
     const k = dayKey(new Date(e.started_at));
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(e);
@@ -370,16 +388,33 @@ function renderEntryRow(e) {
   li.tabIndex = 0;
   li.title = t("popup_resume_title");
 
+  // Bloco de texto em 2 linhas: descrição em cima; projeto · tags embaixo (como
+  // no webapp). Ocupa a 1ª coluna do grid; duração e ações vão à direita.
+  const main = document.createElement("div");
+  main.className = "entry-main";
+
   const desc = document.createElement("span");
   desc.className = "entry-desc";
   if (e.description) desc.textContent = e.description;
   else { desc.textContent = t("popup_no_description"); desc.classList.add("subtle"); }
 
+  const meta = document.createElement("div");
+  meta.className = "entry-meta";
+  const p = state.catalog.projects.find((x) => x.id === e.project_id) || null;
   const proj = document.createElement("span");
   proj.className = "entry-project";
-  const p = state.catalog.projects.find((x) => x.id === e.project_id) || null;
   if (p) { const dot = document.createElement("i"); dot.className = "dot"; dot.style.background = p.color; proj.appendChild(dot); }
   proj.appendChild(document.createTextNode(p ? p.name : t("popup_no_project")));
+  meta.appendChild(proj);
+
+  // Tags da entry (vêm no JSON como {id,name}). Chips discretos, iguais aos do app.
+  for (const tag of e.tags || []) {
+    const chip = document.createElement("span");
+    chip.className = "entry-tag";
+    chip.textContent = tag.name;
+    meta.appendChild(chip);
+  }
+  main.append(desc, meta);
 
   const dur = document.createElement("span");
   dur.className = "entry-duration tabular-nums";
@@ -406,7 +441,7 @@ function renderEntryRow(e) {
   more.addEventListener("click", (ev) => { ev.stopPropagation(); toggleEntryMenu(e, li, more); });
 
   actions.append(resume, more);
-  li.append(desc, proj, dur, actions);
+  li.append(main, dur, actions);
   li.addEventListener("click", () => resumeEntry(e.id));
   li.addEventListener("keydown", (ev) => { if (ev.key === "Enter") resumeEntry(e.id); });
   return li;
@@ -432,7 +467,6 @@ function toggleEntryMenu(entry, row, anchor) {
   };
 
   const cont = mkBtn(t("popup_resume_action"), ICON_PLAY, "", () => { menu.remove(); resumeEntry(entry.id); });
-  const split = mkBtn(t("popup_split_action"), ICON_SCISSORS, "", () => { menu.remove(); askSplit(entry, row); });
   const del = mkBtn(t("popup_delete_action"), ICON_TRASH, "danger", () => {
     menu.innerHTML = "";
     const confirm = document.createElement("div");
@@ -451,43 +485,8 @@ function toggleEntryMenu(entry, row, anchor) {
     acts.append(yes, no); confirm.append(q, acts); menu.append(confirm); yes.focus();
   });
 
-  menu.append(cont, split, del);
+  menu.append(cont, del);
   row.appendChild(menu);
-}
-
-// Split inline (mesmo modelo do webapp: "Cortar em" + datetime-local no ponto
-// médio + botão Dividir). O corte precisa cair ESTRITAMENTE entre início e fim.
-function askSplit(entry, row) {
-  if (row.querySelector(".entry-split")) return;
-  const started = new Date(entry.started_at), ended = new Date(entry.ended_at);
-  const midpoint = new Date((started.getTime() + ended.getTime()) / 2);
-
-  const form = document.createElement("form");
-  form.className = "entry-split";
-  const label = document.createElement("span");
-  label.textContent = t("popup_split_at_label");
-  const input = document.createElement("input");
-  input.type = "datetime-local";
-  input.value = toLocalInput(midpoint);
-  input.min = toLocalInput(started);
-  input.max = toLocalInput(ended);
-  const btn = document.createElement("button");
-  btn.type = "submit"; btn.textContent = t("popup_split_action");
-  form.append(label, input, btn);
-  form.addEventListener("click", (ev) => ev.stopPropagation());
-
-  form.addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const cut = new Date(input.value);
-    if (!(cut > started && cut < ended)) return toast(t("popup_split_bad_cut"));
-    const res = await send("entry:split", { id: entry.id, cut: cut.toISOString() });
-    if (res.ok) { toast(t("popup_split_done")); await loadEntries(); renderLedger(); }
-    else if (res.status === 422) toast(t("popup_split_bad_cut"));
-    else fail(res);
-  });
-
-  row.appendChild(form);
-  input.focus();
 }
 
 async function resumeEntry(id) {
@@ -662,7 +661,7 @@ function toast(text) {
 
 async function loadEntries() {
   const r = await send("entries:recent");
-  if (r.ok) { state.entries = r.data; state.entriesPage = r.page || null; }
+  if (r.ok) state.entries = r.data;
 }
 
 function enterIdle() {
@@ -798,7 +797,12 @@ projectPanel.addEventListener("keydown", (e) => {
   else if (e.key === "Enter") { e.preventDefault(); (current || items[0]).click(); }
 });
 tagsPanel.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { e.preventDefault(); tagsPanel.hidden = true; $("#tags-trigger").focus(); }
+  if (e.key === "Escape") { e.preventDefault(); tagsPanel.hidden = true; $("#tags-trigger").focus(); return; }
+  // Enter na busca: se há uma linha "+ Criar 'X'", cria a tag.
+  if (e.key === "Enter") {
+    const createRow = $("#tags-list").querySelector(".combo-create");
+    if (createRow) { e.preventDefault(); createRow.click(); }
+  }
 });
 
 // Clique fora fecha painéis e menus de linha.

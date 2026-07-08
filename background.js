@@ -9,6 +9,19 @@ async function getConfig() {
   return { apiUrl, token, reminderHours: reminderHours ?? 2, configured: Boolean(apiUrl && token) };
 }
 
+// Segunda-feira 00:00 no horário LOCAL, em ISO 8601 COM offset (o servidor exige
+// hora completa + offset; só-data é rejeitada). Usado como `?since=` do ledger.
+function startOfWeekISO(now = new Date()) {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));   // 0 = segunda
+  const pad = (n) => String(n).padStart(2, "0");
+  const off = -d.getTimezoneOffset();                // minutos a leste de UTC
+  const sign = off >= 0 ? "+" : "-";
+  const abs = Math.abs(off);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T00:00:00`
+    + `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+}
+
 // Cache do timer: o badge e os content scripts leem daqui entre syncs.
 // Fonte da verdade continua o servidor — isto é descartável. Toda escrita
 // mantém badge/alarme coerentes (Task 5) e avisa quem escuta (broadcast).
@@ -106,10 +119,12 @@ async function handle(msg) {
     }
 
     case "entries:recent": {
-      // Ledger por dia: 1ª página com o teto do servidor (100). A paginação
-      // (X-Total-*) volta em `res.page` pro popup saber se o histórico foi truncado
-      // (e não afirmar um total de semana errado).
-      return api.recentEntries(cfg, { page: 1, limit: 100 });
+      // Ledger da SEMANA atual: filtra no servidor por `since` = segunda 00:00 local
+      // (ISO completo com offset, que o servidor exige — só-data é rejeitada). Assim
+      // o total da semana é sempre exato e trafega só a semana. A paginação sobe em
+      // `res.page`. Semana raramente passa de 100 entries; se passar, o popup segue
+      // a próxima página, mas o total já bate porque a janela é fechada no servidor.
+      return api.recentEntries(cfg, { page: 1, limit: 100, since: startOfWeekISO() });
     }
 
     case "entry:duplicate": {
@@ -136,11 +151,6 @@ async function handle(msg) {
       return res;
     }
 
-    // Dividir uma entry finalizada em duas no instante `cut`. Servidor responde 204.
-    case "entry:split": {
-      return api.splitEntry(cfg, msg.payload.id, msg.payload.cut);
-    }
-
     case "catalog:get": {
       const [projects, tags] = await Promise.all([api.projects(cfg), api.tags(cfg)]);
       if (!projects.ok) return projects;
@@ -158,6 +168,12 @@ async function handle(msg) {
       const res = await api.tasks(cfg, msg.payload.projectId);
       if (res.ok) res.data = (res.data || []).filter((t) => !t.archived_at);
       return res;
+    }
+
+    // Cria uma tag nova pela extensão (POST /tags). 201 devolve a tag; o popup a
+    // adiciona ao catálogo e já marca na seleção. 422 = nome inválido/duplicado.
+    case "tag:create": {
+      return api.createTag(cfg, msg.payload.name);
     }
 
     // Preferências (theme/accent/locale/time_zone) do servidor. Cacheadas pra o

@@ -197,6 +197,13 @@ body { width: 360px; }
   letter-spacing: 0.06em;
   color: var(--text-subtle);
 }
+/* Linha "+ Criar 'X'" no painel de tags — destaque no acento, borda acima. */
+.combo-list li.combo-create {
+  color: var(--accent);
+  font-weight: 500;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
 
 /* ── Estado RODANDO: resumo read-only + linha do timer ──────────────────── */
 .run-summary {
@@ -262,7 +269,8 @@ body { width: 360px; }
 
 /* ── Ledger: total da semana + dias com total; scrolla aqui dentro ──────── */
 .week-line {
-  margin: 0;
+  /* Respiro claro acima: separa o card (timer) do início do ledger. */
+  margin: 14px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -279,10 +287,12 @@ body { width: 360px; }
 }
 .week-total { font-size: 12px; font-weight: 600; color: var(--text); }
 
-/* Altura do ledger enxuta: cabe sob o teto de 600px do Chrome MESMO com o card
-   em modo manual (mais alto). max-height fixo em vez de dvh (popup não é viewport). */
+/* Altura FIXA do ledger: o popup tem sempre a mesma altura total, não cresce nem
+   encolhe conforme os dados (semana cheia ou vazia). O ledger scrolla internamente
+   quando passa disso. 360px acomoda ~uma semana e mantém o total (header 40 +
+   padding + card manual ~130 + week-line + 360) sob o teto de 600px do Chrome. */
 .ledger {
-  max-height: 300px;
+  height: 328px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
@@ -305,10 +315,10 @@ body { width: 360px; }
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   min-height: 32px;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border-radius: 6px;
   cursor: pointer;
 }
@@ -317,6 +327,8 @@ body { width: 360px; }
   outline: none;
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
+/* Bloco de texto em 2 linhas (descrição + meta). min-width:0 deixa o ellipsis pegar. */
+.entry-main { min-width: 0; display: grid; gap: 2px; }
 .entry-desc {
   font-size: 13px;
   color: var(--text);
@@ -325,18 +337,33 @@ body { width: 360px; }
   white-space: nowrap;
 }
 .entry-desc.subtle { color: var(--text-subtle); }
+/* Linha de meta: projeto + tags. Quebra pra 2ª linha se não couber. */
+.entry-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-size: 11px;
+  color: var(--text-subtle);
+}
 .entry-project {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  color: var(--text-subtle);
-  max-width: 110px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.entry-duration { font-size: 12px; font-weight: 500; color: var(--text); }
+.entry-tag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 55%, transparent);
+  color: var(--text-subtle);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.entry-duration { font-size: 12px; font-weight: 500; color: var(--text); padding-top: 1px; }
 
 /* Ações (▶ ⋮) sobrepõem a duração no hover, com scrim — ZERO reflow. */
 .entry-actions {
@@ -423,32 +450,13 @@ body { width: 360px; }
 .entry-confirm .yes { border-color: var(--danger); color: var(--danger); }
 .entry-confirm .yes:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
 
-/* Split inline (mesmo modelo do webapp: "Cortar em" + datetime-local + Dividir) */
-.entry-split {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 4px 2px;
-  font-size: 12px;
-  color: var(--text-subtle);
-}
-.entry-split input { flex: 1; padding: 4px 8px; font-size: 12px; }
-.entry-split button {
-  border: 1px solid var(--accent);
-  background: transparent;
-  color: var(--accent);
-  font: inherit;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-.entry-split button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-
 /* Estado vazio do ledger: convite pra agir, não um vácuo. */
 .ledger-empty {
+  /* Mesma altura do ledger pra a altura total do popup não mudar quando a semana
+     está vazia; centraliza o convite no meio do espaço. */
+  height: 328px;
   display: grid;
+  align-content: center;
   justify-items: center;
   gap: 8px;
   padding: 28px 16px;
