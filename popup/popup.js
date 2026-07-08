@@ -411,8 +411,6 @@ function renderLedger() {
 function renderEntryRow(e) {
   const li = document.createElement("div");
   li.className = "entry-row";
-  li.tabIndex = 0;
-  li.title = t("popup_resume_title");
 
   // Bloco de texto em 2 linhas: descrição em cima; projeto · tags embaixo (como
   // no webapp). Ocupa a 1ª coluna do grid; duração e ações vão à direita.
@@ -446,18 +444,8 @@ function renderEntryRow(e) {
   dur.className = "entry-duration tabular-nums";
   dur.textContent = formatDuration(e.duration_seconds);
 
-  // Ações sobre o hover (scrim): ▶ retomar + ⋮ menu.
-  const actions = document.createElement("span");
-  actions.className = "entry-actions";
-
-  const resume = document.createElement("button");
-  resume.type = "button";
-  resume.className = "entry-icon entry-resume";
-  resume.title = t("popup_resume_action");
-  resume.setAttribute("aria-label", t("popup_resume_action"));
-  resume.innerHTML = ICON_PLAY;
-  resume.addEventListener("click", (ev) => { ev.stopPropagation(); resumeEntry(e.id); });
-
+  // Menu ⋮ SEMPRE visível no fim da linha; Continuar/Excluir moram só dentro dele.
+  // A linha em si não é mais clicável (só exibição).
   const more = document.createElement("button");
   more.type = "button";
   more.className = "entry-icon entry-more";
@@ -466,10 +454,7 @@ function renderEntryRow(e) {
   more.innerHTML = ICON_MORE;
   more.addEventListener("click", (ev) => { ev.stopPropagation(); toggleEntryMenu(e, li, more); });
 
-  actions.append(resume, more);
-  li.append(main, dur, actions);
-  li.addEventListener("click", () => resumeEntry(e.id));
-  li.addEventListener("keydown", (ev) => { if (ev.key === "Enter") resumeEntry(e.id); });
+  li.append(main, dur, more);
   return li;
 }
 

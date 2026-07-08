@@ -307,17 +307,16 @@ body { width: 360px; }
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: start;
+  align-items: center;
   gap: 8px;
   min-height: 32px;
   padding: 6px 8px;
   border-radius: 6px;
-  cursor: pointer;
 }
-/* Hover sólido (base pro scrim das ações — precisa ser opaco). */
+/* Realce leve no hover (a linha não é mais clicável; ações vivem no menu ⋮). */
 .entry-row:hover, .entry-row:focus-within {
   outline: none;
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
 }
 /* Bloco de texto em 2 linhas (descrição + meta). min-width:0 deixa o ellipsis pegar. */
 .entry-main { min-width: 0; display: grid; gap: 2px; }
@@ -357,26 +356,7 @@ body { width: 360px; }
 }
 .entry-duration { font-size: 12px; font-weight: 500; color: var(--text); padding-top: 1px; }
 
-/* Ações (▶ ⋮) sobrepõem a duração no hover, com scrim — ZERO reflow. */
-.entry-actions {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%) translateX(2px);
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding-left: 28px;
-  opacity: 0;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, var(--surface)) 24px);
-}
-.entry-row:hover .entry-actions, .entry-row:focus-within .entry-actions {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(-50%);
-  transition: opacity 120ms ease-out, transform 120ms ease-out;
-}
+/* Menu ⋮ sempre visível no fim da linha (Continuar/Excluir moram só nele). */
 .entry-icon {
   display: inline-flex;
   align-items: center;
@@ -391,7 +371,6 @@ body { width: 360px; }
   cursor: pointer;
 }
 .entry-icon:hover { color: var(--text); background: color-mix(in srgb, var(--border) 45%, transparent); }
-.entry-icon.entry-resume:hover { color: var(--accent); }
 .entry-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* Menu ⋮ (Continuar / Dividir / Excluir) */
