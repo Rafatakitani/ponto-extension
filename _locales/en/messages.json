@@ -77,5 +77,21 @@
   "notif_reminder_continue": { "message": "Keep going" },
 
   "content_start": { "message": "Start timer" },
-  "content_stop": { "message": "Stop ($ELAPSED$)", "placeholders": { "elapsed": { "content": "$1" } } }
+  "content_stop": { "message": "Stop ($ELAPSED$)", "placeholders": { "elapsed": { "content": "$1" } } },
+
+  "popup_this_week": {"message": "This week"},
+  "popup_recent_label": {"message": "Recent"},
+  "popup_today": {"message": "Today"},
+  "popup_yesterday": {"message": "Yesterday"},
+  "popup_empty_ledger": {"message": "Nothing tracked yet. Start the timer above."},
+  "popup_tags_label_all": {"message": "Tags"},
+  "popup_tags_count": {"message": "$COUNT$ tags", "placeholders": {"count": {"content": "$1", "example": "3"}}},
+  "popup_resume_action": {"message": "Continue"},
+  "popup_menu_more": {"message": "More actions"},
+  "popup_billable_label": {"message": "Billable"},
+  "popup_mode_manual": {"message": "Log time manually"},
+  "popup_mode_timer": {"message": "Back to timer"},
+  "popup_tasks_head": {"message": "Tasks"},
+  "popup_refresh": {"message": "Refresh"},
+  "popup_started_at": {"message": "started $TIME$", "placeholders": {"time": {"content": "$1", "example": "2:05 PM"}}}
 }

@@ -1,84 +1,173 @@
-/* Popup do Ponto — estética moderna minimal densa (Linear), tokens de shared/tokens.css. */
+/* Popup do Ponto — um "relógio de ponto com um livro-razão embaixo".
+   Card compose que morfa (timer / rodando / manual) + ledger por dia que scrolla.
+   Tokens em shared/tokens.css; obedece tema/acento do servidor. */
 
-body { width: 340px; }
+body { width: 360px; }
 
-/* Header da marca — espelha o shell-mobile-header do webapp: logo + "Ponto" numa
-   barra recuada, com a linha teal (acento) no topo e borda embaixo. */
+/* [hidden] tem que vencer os display: flex/grid dos componentes abaixo (senão a
+   especificidade da classe sobrepõe a regra do UA e o elemento "escondido" renderiza). */
+[hidden] { display: none !important; }
+
+/* ── Header: marca à esquerda, ações de ícone à direita (absorve o footer) ── */
 #app-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 12px;
+  height: 40px;
+  padding: 0 8px 0 12px;
   background: var(--surface-sunken);
   border-top: 2px solid var(--accent);
   border-bottom: 1px solid var(--border);
 }
-.brand-mark { display: block; flex: none; border-radius: 5px; }
+.brand-mark { display: block; flex: none; }
 .brand-name {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text);
 }
-
-#app {
-  padding: 12px;
-  display: grid;
-  gap: 10px;
+.header-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-subtle);
+  cursor: pointer;
 }
+.icon-btn:hover { color: var(--text); background: color-mix(in srgb, var(--border) 40%, transparent); }
+.icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+#app { padding: 12px 12px 8px; display: grid; gap: 10px; }
 
 /* Setup / erro */
 #view-setup p, #view-error p { margin: 0 0 4px; }
 .row { display: flex; gap: 8px; }
 
-/* Running */
-.running-project {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-subtle);
-  font-size: 13px;
+/* ── Compose card: a única "instrumento" no topo ────────────────────────── */
+.compose-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px 8px;
+  display: grid;
+  gap: 2px;
 }
-.running-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.clock {
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+/* Um só anel de foco pro card inteiro (não por input) → lê como "desenhado". */
+.compose-card:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
-/* Combobox de projeto */
-.combo { position: relative; }
-.combo-trigger {
-  width: 100%;
-  display: flex;
-  align-items: center;
+.compose-eyebrow {
+  margin: 0 0 2px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.compose-action {
+  display: grid;
+  grid-template-columns: 1fr 36px;
   gap: 8px;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
+  align-items: center;
+}
+/* Input sem borda/anel próprio — o card é o objeto de foco. */
+.compose-input {
+  height: 32px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+.compose-input:focus { outline: none; box-shadow: none; border: none; }
+.compose-input::placeholder { color: var(--text-subtle); font-weight: 400; }
+
+/* Botão redondo que morfa: ▶ iniciar → ■ parar → ＋ adicionar. */
+.round-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.round-btn:hover { background: var(--accent-hover); }
+.round-btn .ico-play { margin-left: 1px; } /* centro óptico do triângulo */
+.compose-card[data-running="true"] .round-btn { background: var(--danger); color: var(--on-danger); }
+
+/* ── Meta row: projeto · tags · faturável · alternar modo ───────────────── */
+.meta-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.chip--meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  max-width: 150px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--text);
   font: inherit;
-  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
 }
-.combo-trigger:hover { border-color: var(--border-strong); }
+.chip--meta:hover { background: color-mix(in srgb, var(--border) 40%, transparent); }
+.chip--meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip--meta.is-empty { color: var(--text-subtle); }
+
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-subtle);
+  cursor: pointer;
+}
+.icon-chip:hover { background: color-mix(in srgb, var(--border) 40%, transparent); color: var(--text); }
+.icon-chip:focus-visible, .chip--meta:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Faturável ligado: a cor acesa É o rótulo. */
+#btn-billable[aria-pressed="true"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.mode-toggle { margin-left: auto; }
+
+/* ── Combobox (projeto e tags) ──────────────────────────────────────────── */
+.combo { position: relative; }
 .combo-panel {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  right: 0;
   z-index: 10;
+  min-width: 200px;
+  max-width: 320px;
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 4px 16px rgb(0 0 0 / .12);
-  max-height: 220px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / .18);
+  max-height: 240px;
   overflow: auto;
 }
 .combo-search { border: none; border-bottom: 1px solid var(--border); border-radius: 0; }
@@ -90,158 +179,252 @@ body { width: 340px; }
   align-items: center;
   padding: 6px 10px;
   cursor: pointer;
+  font-size: 13px;
 }
 .combo-list li:hover, .combo-list li:focus {
   outline: none;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-
-/* Tags */
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip {
-  font-size: 12px;
-  padding: 2px 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  background: transparent;
+.combo-list li[aria-selected="true"] { color: var(--accent); }
+.combo-list li .check { margin-left: auto; color: var(--accent); opacity: 0; }
+.combo-list li[aria-selected="true"] .check { opacity: 1; }
+/* Subcabeçalho "Tasks" quando o painel de projeto dobra em tasks */
+.combo-subhead {
+  padding: 6px 10px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-subtle);
-  cursor: pointer;
 }
-.chip--on { border-color: var(--accent); color: var(--accent); }
 
-/* Linha de início (faturável + botão) */
-.start-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.billable {
+/* ── Estado RODANDO: resumo read-only + linha do timer ──────────────────── */
+.run-summary {
+  margin: 2px 0 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  color: var(--text-subtle);
-  cursor: pointer;
-}
-.billable input { width: auto; }
-
-/* Recentes — linhas densas, sem cards */
-#recent-section h2 {
   font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--text-subtle);
-  margin: 4px 0;
 }
-#recent-list { list-style: none; margin: 0; padding: 0; }
-.recent-row {
+.run-timer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.clock { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.run-started { font-size: 11px; color: var(--text-subtle); }
+/* Pulso do stop enquanto roda (única animação não-solicitada; derivada de --danger). */
+@media (prefers-reduced-motion: no-preference) {
+  .compose-card[data-running="true"] .round-btn {
+    animation: run-pulse 2s ease-in-out infinite;
+  }
+}
+@keyframes run-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 35%, transparent); }
+  70%  { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ── Estado MANUAL: duas linhas pra caber em 360px sem cortar ────────────── */
+/* Linha 1: início – fim · data (os três de tempo).  Linha 2: só a duração.
+   grid-template-areas mantém tudo alinhado sem overflow do date input nativo. */
+.manual-times {
   display: grid;
-  grid-template-columns: 1fr auto auto auto auto;
+  grid-template-columns: 1fr auto 1fr minmax(0, 1.2fr);
+  grid-template-areas:
+    "start dash end date"
+    "dur   dur  dur dur";
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+#manual-start-time { grid-area: start; }
+#manual-end-time   { grid-area: end; }
+#manual-date       { grid-area: date; min-width: 0; }
+#manual-duration   { grid-area: dur; }
+.manual-times input {
+  height: 28px;
+  padding: 3px 6px;
+  font-size: 12px;
+  min-width: 0;                 /* deixa inputs encolherem dentro do grid */
+}
+.manual-times .dash { grid-area: dash; text-align: center; color: var(--text-subtle); }
+
+/* Troca de modo/estado: crossfade suave, sem animar altura. */
+@media (prefers-reduced-motion: no-preference) {
+  .compose-action, .meta-row, .run-summary, .run-timer, .manual-times, .compose-eyebrow {
+    animation: fade-swap 120ms ease-out;
+  }
+}
+@keyframes fade-swap { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } }
+
+/* ── Ledger: total da semana + dias com total; scrolla aqui dentro ──────── */
+.week-line {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 6px;
+}
+.week-total { flex: none; }
+.week-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-subtle);
+}
+.week-total { font-size: 12px; font-weight: 600; color: var(--text); }
+
+/* Altura do ledger enxuta: cabe sob o teto de 600px do Chrome MESMO com o card
+   em modo manual (mais alto). max-height fixo em vez de dvh (popup não é viewport). */
+.ledger {
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 6px 4px;
+}
+.day-total { flex: none; }
+/* Hairline só entre dias (não a 1ª). Nada de borda por linha. */
+.day-group + .day-group .day-header { border-top: 1px solid var(--border); }
+.day-name { font-size: 11px; font-weight: 600; color: var(--text-subtle); }
+.day-total { font-size: 11px; font-weight: 600; color: var(--text); }
+
+.entry-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
-  padding: 6px 4px;
-  border-bottom: 1px solid var(--border);
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: 6px;
   cursor: pointer;
 }
-.recent-row:last-child { border-bottom: none; }
-.recent-row:hover, .recent-row:focus-within {
+/* Hover sólido (base pro scrim das ações — precisa ser opaco). */
+.entry-row:hover, .entry-row:focus-within {
   outline: none;
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
-
-/* Ações da linha (dividir + apagar): invisíveis até hover/foco (não roubam o
-   clique de retomar, que é o gesto primário). currentColor + ícones do app. */
-.recent-actions { display: flex; align-items: center; gap: 2px; }
-.recent-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-subtle);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  opacity: 0;
-}
-.recent-row:hover .recent-icon,
-.recent-row:focus-within .recent-icon { opacity: 1; }
-.recent-icon:hover { color: var(--text); background: color-mix(in srgb, var(--border) 45%, transparent); }
-.recent-icon.recent-delete:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
-.recent-icon:focus-visible { opacity: 1; outline: 2px solid var(--accent); outline-offset: 1px; }
-
-/* Confirmação inline de apagar (substitui a lixeira: "Apagar? Sim Não") */
-.recent-confirm { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-subtle); }
-.recent-confirm button {
-  border: 1px solid var(--border-strong);
-  background: transparent;
+.entry-desc {
+  font-size: 13px;
   color: var(--text);
-  font: inherit;
-  font-size: 11px;
-  padding: 1px 7px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-.recent-confirm .yes { border-color: var(--danger); color: var(--danger); }
-.recent-confirm .yes:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
-.recent-desc {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.recent-desc.subtle { color: var(--text-subtle); }
-.recent-project {
+.entry-desc.subtle { color: var(--text-subtle); }
+.entry-project {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-subtle);
   max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.recent-duration { font-size: 12px; color: var(--text-subtle); }
-.recent-play { width: 12px; text-align: center; color: var(--accent); }
-.recent-row:hover .recent-play::after,
-.recent-row:focus-within .recent-play::after { content: "▶"; font-size: 10px; }
+.entry-duration { font-size: 12px; font-weight: 500; color: var(--text); }
 
-/* Link "＋ Lançar tempo" — botão discreto que abre o form manual */
-.link-btn {
+/* Ações (▶ ⋮) sobrepõem a duração no hover, com scrim — ZERO reflow. */
+.entry-actions {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%) translateX(2px);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 28px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, var(--surface)) 24px);
+}
+.entry-row:hover .entry-actions, .entry-row:focus-within .entry-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+.entry-icon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  align-self: start;
-  padding: 4px 2px;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   border: none;
   background: transparent;
-  color: var(--accent);
-  font: inherit;
-  font-size: 13px;
+  color: var(--text-subtle);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
-.link-btn:hover { color: var(--accent-hover); }
+.entry-icon:hover { color: var(--text); background: color-mix(in srgb, var(--border) 45%, transparent); }
+.entry-icon.entry-resume:hover { color: var(--accent); }
+.entry-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* Form de lançamento manual — mesmo idioma visual do resto do popup.
-   Início/Fim/Duração LIGADOS (como no webapp): editar dois recalcula o terceiro. */
-.manual-form { display: grid; gap: 8px; }
-.manual-times { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.manual-times label {
-  display: grid;
-  gap: 3px;
-  font-size: 12px;
-  color: var(--text-subtle);
+/* Menu ⋮ (Continuar / Dividir / Excluir) */
+.entry-menu {
+  position: absolute;
+  right: 4px;
+  top: calc(100% - 4px);
+  z-index: 12;
+  min-width: 150px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(0 0 0 / .18);
+  padding: 4px;
 }
-/* Duração ocupa a linha inteira abaixo de início/fim */
-.manual-times label:last-child { grid-column: 1 / -1; }
-.manual-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.entry-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.entry-menu button:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.entry-menu button.danger { color: var(--danger); }
+.entry-menu button.danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
 
-/* Form de split inline nos recentes (mesmo modelo do menu ⋮ do webapp:
-   "Cortar em" + datetime-local com default no ponto médio + botão Dividir) */
-.recent-split {
+/* Confirmação inline de apagar ("Excluir? Sim Não") dentro do menu */
+.entry-confirm { padding: 6px 8px; font-size: 12px; color: var(--text-subtle); }
+.entry-confirm .actions { display: flex; gap: 6px; margin-top: 6px; }
+.entry-confirm button {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.entry-confirm .yes { border-color: var(--danger); color: var(--danger); }
+.entry-confirm .yes:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+
+/* Split inline (mesmo modelo do webapp: "Cortar em" + datetime-local + Dividir) */
+.entry-split {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
@@ -250,8 +433,8 @@ body { width: 340px; }
   font-size: 12px;
   color: var(--text-subtle);
 }
-.recent-split input { flex: 1; padding: 4px 8px; font-size: 12px; }
-.recent-split button {
+.entry-split input { flex: 1; padding: 4px 8px; font-size: 12px; }
+.entry-split button {
   border: 1px solid var(--accent);
   background: transparent;
   color: var(--accent);
@@ -261,7 +444,18 @@ body { width: 340px; }
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
-.recent-split button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.entry-split button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* Estado vazio do ledger: convite pra agir, não um vácuo. */
+.ledger-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  text-align: center;
+}
+.ledger-empty img { opacity: .3; }
+.ledger-empty p { margin: 0; font-size: 12px; color: var(--text-subtle); }
 
 /* Toast */
 #toast {
@@ -272,27 +466,9 @@ body { width: 340px; }
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgb(0 0 0 / .18);
   padding: 6px 10px;
   font-size: 12px;
   margin: 0;
+  z-index: 20;
 }
-
-/* Rodapé */
-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
-}
-#link-app { color: var(--accent); text-decoration: none; font-size: 13px; }
-#link-app:hover { text-decoration: underline; }
-#btn-options {
-  background: transparent;
-  border: none;
-  color: var(--text-subtle);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0 4px;
-}
-#btn-options:hover { color: var(--text); }

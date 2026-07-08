@@ -106,9 +106,10 @@ async function handle(msg) {
     }
 
     case "entries:recent": {
-      const res = await api.recentEntries(cfg);
-      if (res.ok) res.data = (res.data || []).slice(0, 30);
-      return res;
+      // Ledger por dia: 1ª página com o teto do servidor (100). A paginação
+      // (X-Total-*) volta em `res.page` pro popup saber se o histórico foi truncado
+      // (e não afirmar um total de semana errado).
+      return api.recentEntries(cfg, { page: 1, limit: 100 });
     }
 
     case "entry:duplicate": {
