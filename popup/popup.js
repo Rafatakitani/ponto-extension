@@ -2,7 +2,7 @@
 // timer / rodando / manual; abaixo, o histórico agrupado por dia (Clockify-like).
 // Fala com o service worker via chrome.runtime.sendMessage; sem estado remoto próprio.
 
-const t = (key, subs) => chrome.i18n.getMessage(key, subs);
+import { t, applyLocale } from "../shared/i18n.js";
 const $ = (sel) => document.querySelector(sel);
 const send = (type, payload) => chrome.runtime.sendMessage({ type, payload });
 
@@ -11,26 +11,31 @@ const ICON_TRASH = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" 
 const ICON_PLAY = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
 const ICON_MORE = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>';
 
-// Traduz textos e placeholders declarados no HTML (sem string de UI hardcoded).
-document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
-document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+// Aplica as strings de UI no DOM. Reexecutável: roda no boot (locale do browser)
+// e de novo quando o locale do app chega/muda, sem string de UI hardcoded.
+function applyI18n() {
+  // Textos e placeholders declarados no HTML.
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
 
-// Rótulos acessíveis para controles sem <label> visível.
-$("#description").setAttribute("aria-label", t("popup_description_placeholder"));
-$("#project-trigger").setAttribute("aria-label", t("popup_project_label"));
-$("#tags-trigger").setAttribute("aria-label", t("popup_tags_label"));
-$("#btn-billable").setAttribute("aria-label", t("popup_billable"));
-$("#btn-billable").title = t("popup_billable");
-$("#btn-refresh").setAttribute("aria-label", t("popup_refresh"));
-$("#btn-refresh").title = t("popup_refresh");
-$("#link-app").setAttribute("aria-label", t("popup_open_app"));
-$("#link-app").title = t("popup_open_app");
-$("#btn-options").title = t("popup_preferences");
-$("#btn-options").setAttribute("aria-label", t("popup_preferences"));
-$("#manual-start-time").setAttribute("aria-label", t("popup_manual_start"));
-$("#manual-end-time").setAttribute("aria-label", t("popup_manual_end"));
-$("#manual-date").setAttribute("aria-label", t("popup_manual_start"));
-$("#manual-duration").setAttribute("aria-label", t("popup_manual_duration"));
+  // Rótulos acessíveis para controles sem <label> visível.
+  $("#description").setAttribute("aria-label", t("popup_description_placeholder"));
+  $("#project-trigger").setAttribute("aria-label", t("popup_project_label"));
+  $("#tags-trigger").setAttribute("aria-label", t("popup_tags_label"));
+  $("#btn-billable").setAttribute("aria-label", t("popup_billable"));
+  $("#btn-billable").title = t("popup_billable");
+  $("#btn-refresh").setAttribute("aria-label", t("popup_refresh"));
+  $("#btn-refresh").title = t("popup_refresh");
+  $("#link-app").setAttribute("aria-label", t("popup_open_app"));
+  $("#link-app").title = t("popup_open_app");
+  $("#btn-options").title = t("popup_preferences");
+  $("#btn-options").setAttribute("aria-label", t("popup_preferences"));
+  $("#manual-start-time").setAttribute("aria-label", t("popup_manual_start"));
+  $("#manual-end-time").setAttribute("aria-label", t("popup_manual_end"));
+  $("#manual-date").setAttribute("aria-label", t("popup_manual_start"));
+  $("#manual-duration").setAttribute("aria-label", t("popup_manual_duration"));
+}
+applyI18n();
 
 const state = {
   entry: null,            // entry rodando ou null
@@ -716,11 +721,23 @@ function applyPrefs(prefs) {
   else root.removeAttribute("data-accent");
 }
 
+// Reaplica locale (i18n) + tema/acento a partir das prefs e re-renderiza a UI
+// se o idioma mudou. Idempotente: só repinta quando o override de locale muda.
+async function applyPrefsAll(prefs) {
+  applyPrefs(prefs);
+  const localeChanged = await applyLocale(prefs);
+  if (localeChanged) {
+    applyI18n();
+    // Textos que só existem depois do primeiro render (compose/ledger).
+    if (!$("#view-main").hidden) { renderCompose(); renderLedger(); }
+  }
+}
+
 async function bootPrefs() {
   const { prefsCache } = await chrome.storage.local.get("prefsCache");
-  if (prefsCache?.data) applyPrefs(prefsCache.data);
+  if (prefsCache?.data) await applyPrefsAll(prefsCache.data);
   const res = await send("prefs:get");
-  if (res.ok) applyPrefs(res.data);
+  if (res.ok) await applyPrefsAll(res.data);
 }
 
 async function boot() {

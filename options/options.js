@@ -1,9 +1,14 @@
 // Options: única tela que ESCREVE a config. Salvar pede a host permission da
 // api_url (optional_host_permissions) — precisa acontecer no gesto do usuário.
-const t = (key, subs) => chrome.i18n.getMessage(key, subs);
+import { t, applyLocale } from "../shared/i18n.js";
 const $ = (sel) => document.querySelector(sel);
 
-document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+// Reexecutável: roda no boot (locale do browser) e de novo quando o locale do
+// app chega/muda. As mensagens de status vêm de t() na hora, então já respeitam.
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+}
+applyI18n();
 
 const statusEl = $("#status");
 function setStatus(text, kind = "") { statusEl.textContent = text; statusEl.className = kind; }
@@ -33,9 +38,14 @@ function applyPrefs(prefs) {
   if (accent && accent !== "teal") root.setAttribute("data-accent", accent);
   else root.removeAttribute("data-accent");
 }
-chrome.storage.local.get("prefsCache").then(({ prefsCache }) => {
-  if (prefsCache?.data) applyPrefs(prefsCache.data);
-  chrome.runtime.sendMessage({ type: "prefs:get" }).then((res) => { if (res?.ok) applyPrefs(res.data); }).catch(() => {});
+// Reaplica tema/acento + locale (i18n). Se o idioma mudou, repinta os textos.
+async function applyPrefsAll(prefs) {
+  applyPrefs(prefs);
+  if (await applyLocale(prefs)) applyI18n();
+}
+chrome.storage.local.get("prefsCache").then(async ({ prefsCache }) => {
+  if (prefsCache?.data) await applyPrefsAll(prefsCache.data);
+  chrome.runtime.sendMessage({ type: "prefs:get" }).then((res) => { if (res?.ok) applyPrefsAll(res.data); }).catch(() => {});
 });
 
 $("#btn-reveal").addEventListener("click", () => {
@@ -82,8 +92,8 @@ $("#form").addEventListener("submit", async (event) => {
   // força um re-sync imediato contra o servidor (possivelmente novo).
   await chrome.storage.local.remove(["timerCache", "snoozeUntil", "prefsCache"]);
   chrome.runtime.sendMessage({ type: "timer:get" }).catch(() => {});
-  // Re-lê preferências do novo servidor e reaplica o tema já nesta tela.
-  chrome.runtime.sendMessage({ type: "prefs:get" }).then((res) => { if (res?.ok) applyPrefs(res.data); }).catch(() => {});
+  // Re-lê preferências do novo servidor e reaplica tema + idioma já nesta tela.
+  chrome.runtime.sendMessage({ type: "prefs:get" }).then((res) => { if (res?.ok) applyPrefsAll(res.data); }).catch(() => {});
 
   setStatus(t("options_saved"), "ok");
 });
