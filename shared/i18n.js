@@ -1,17 +1,23 @@
 // i18n da UI sincronizado com o LOCALE DO APP, não com o do browser.
 //
 // chrome.i18n.getMessage() resolve contra o idioma do BROWSER e não aceita
-// override em runtime. Mas o app expõe o locale que o user escolheu
+// override em runtime. Mas o app expõe o locale do user
 // (GET /preferences → locale ∈ {null, "pt-BR", "en"}). Este módulo é uma fina
 // camada de tradução por cima dos MESMOS _locales/ que servem o chrome.i18n:
 //
-//   • locale null (auto)  → sem override; t() delega pro chrome.i18n (browser).
-//   • "pt-BR" / "en"      → carrega _locales/<code>/messages.json e traduz na mão.
+//   • "pt-BR" / "en"  → carrega _locales/<code>/messages.json e traduz na mão.
+//   • null            → o user nunca escolheu idioma no app; o app renderiza no
+//                       default_locale dele (pt-BR, fixo em config/application.rb).
+//                       Espelhamos ISSO — a língua EFETIVA do app, não o browser.
+//                       (O browser não é referência: o app é. Ver DEFAULT_DIR.)
 //
 // Fonte de verdade única: os arquivos _locales/. Nada de dicionário duplicado.
 
 // app locale ("pt-BR"/"en"/null) → pasta em _locales/ (mesmos nomes do manifest).
 const LOCALE_DIRS = { "pt-BR": "pt_BR", "en": "en" };
+// Fallback quando locale é null/desconhecido: o default_locale do app Ponto
+// (pt-BR). Assim a extensão sempre reflete a língua EFETIVA do app.
+const DEFAULT_DIR = "pt_BR";
 
 // Dict do override ativo (null = sem override, cai pro browser via chrome.i18n).
 // { key: { message, placeholders } } — o shape cru do messages.json.
@@ -50,15 +56,11 @@ async function loadDict(dir) {
   return dict;
 }
 
-// Aplica o locale das preferências do app. Retorna true se o override MUDOU
+// Aplica o locale das preferências do app. Retorna true se o dict ativo MUDOU
 // (chamador re-renderiza os textos); false se nada mudou (evita repaint à toa).
+// locale null/desconhecido → DEFAULT_DIR (língua efetiva do app), nunca browser.
 export async function applyLocale(prefs) {
-  const dir = LOCALE_DIRS[prefs?.locale] || null; // null/desconhecido → browser
-  if (!dir) {
-    const changed = active !== null;
-    active = null;
-    return changed;
-  }
+  const dir = LOCALE_DIRS[prefs?.locale] || DEFAULT_DIR;
   const dict = await loadDict(dir);
   const changed = active !== dict;
   active = dict;
