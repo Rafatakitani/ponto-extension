@@ -1,6 +1,6 @@
 {
   "ext_name": { "message": "Ponto" },
-  "ext_description": { "message": "Timer do Ponto no navegador: inicie e pare de qualquer aba, com botões no GitHub e Linear." },
+  "ext_description": { "message": "Timer do Ponto no navegador: inicie e pare de qualquer aba." },
   "cmd_toggle": { "message": "Iniciar/parar o timer" },
 
   "popup_setup_hint": { "message": "Conecte a extensão ao seu servidor do Ponto para começar." },
@@ -71,9 +71,6 @@
   "notif_reminder_message": { "message": "Ainda trabalhando em \"$DESC$\"? ($ELAPSED$)", "placeholders": { "desc": { "content": "$1" }, "elapsed": { "content": "$2" } } },
   "notif_reminder_stop": { "message": "Parar timer" },
   "notif_reminder_continue": { "message": "Continuar" },
-
-  "content_start": { "message": "Iniciar timer" },
-  "content_stop": { "message": "Parar ($ELAPSED$)", "placeholders": { "elapsed": { "content": "$1" } } },
 
   "popup_this_week": {"message": "Esta semana"},
   "popup_recent_label": {"message": "Recentes"},

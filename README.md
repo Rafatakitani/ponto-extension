@@ -10,8 +10,6 @@ self-hosted. Traz o timer pra dentro do navegador:
 - **Badge** no ícone mostra o timer rodando.
 - **Atalho global** (`Ctrl+Shift+Space`) pra iniciar/parar sem abrir o popup.
 - **Lembrete de timer esquecido** — avisa quando o timer passa de N horas rodando.
-- **Botões injetados no GitHub e no Linear** — inicia um timer já com a descrição
-  da issue/PR.
 
 Extensão Manifest V3, zero-build (sem Node, sem bundler — arquivos servidos como
 estão).
@@ -59,8 +57,6 @@ tracker. It brings the timer into your browser:
 - **Badge** on the icon shows the running timer.
 - **Global shortcut** (`Ctrl+Shift+Space`) to start/stop without opening the popup.
 - **Forgotten-timer reminder** — warns when the timer has been running past N hours.
-- **Buttons injected into GitHub and Linear** — start a timer pre-filled with the
-  issue/PR description.
 
 Manifest V3 extension, zero-build (no Node, no bundler — files served as-is).
 

@@ -1,7 +1,6 @@
 // Service worker do ponto-extension: TODOS os fetch moram aqui (sem CORS via
-// host permissions). Popup/options/content falam por mensagens; o protocolo
-// está em docs/plans/2026-07-06-ponto-extension.md. A Task 5 acrescenta badge,
-// alarmes, lembrete e atalho (tudo abaixo do router).
+// host permissions). Popup/options falam por mensagens. Abaixo do router:
+// badge, alarmes, lembrete e atalho global.
 import { api } from "./lib/api.js";
 
 async function getConfig() {
@@ -22,9 +21,9 @@ function startOfWeekISO(now = new Date()) {
     + `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
 }
 
-// Cache do timer: o badge e os content scripts leem daqui entre syncs.
-// Fonte da verdade continua o servidor — isto é descartável. Toda escrita
-// mantém badge/alarme coerentes (Task 5) e avisa quem escuta (broadcast).
+// Cache do timer: o badge lê daqui entre syncs. Fonte da verdade continua o
+// servidor — isto é descartável. Toda escrita mantém badge/alarme coerentes e
+// avisa o popup (broadcast).
 async function setTimerCache(entry) {
   // Só faz broadcast quando a entry MUDA de fato: o tick de 1 min reescreve o
   // cache toda vez, e um broadcast redundante faz o popup re-renderizar,
@@ -56,16 +55,10 @@ async function refreshTimer(cfg) {
   return res;
 }
 
-// Avisa popup (runtime) e abas com content script (tabs). Erros de "nenhum
-// receptor" são esperados (popup fechado, aba sem script) — engolir.
-// ⚠️ Sem a permissão "tabs", query com filtro de URL retorna VAZIO (achado na
-// bateria de 06/07) — então mandamos pra TODAS as abas e deixamos o catch
-// descartar as que não têm content script. Mais barato que pedir "tabs".
+// Avisa o popup (runtime) de mudanças no timer. Erro de "nenhum receptor" é
+// esperado quando o popup está fechado — engolir.
 function broadcast(message) {
   chrome.runtime.sendMessage(message).catch(() => {});
-  chrome.tabs.query({})
-    .then((tabs) => { for (const tab of tabs) chrome.tabs.sendMessage(tab.id, message).catch(() => {}); })
-    .catch(() => {});
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -210,7 +203,7 @@ async function updateBadge(entry) {
 }
 
 // Rodando → tick de 1 min (badge + lembrete). Parado → poll de 5 min pra pegar
-// timer iniciado por fora (app/CLI) e manter badge/content scripts honestos.
+// timer iniciado por fora (app/CLI) e manter o badge honesto.
 async function scheduleTick(entry) {
   await chrome.alarms.clear("ponto-tick");
   chrome.alarms.create("ponto-tick", { periodInMinutes: entry ? 1 : 5 });

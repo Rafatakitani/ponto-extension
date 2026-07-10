@@ -38,33 +38,5 @@
       },
       "description": "__MSG_cmd_toggle__"
     }
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://github.com/*"
-      ],
-      "js": [
-        "content/common.js",
-        "content/github.js"
-      ],
-      "css": [
-        "content/content.css"
-      ],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "https://linear.app/*"
-      ],
-      "js": [
-        "content/common.js",
-        "content/linear.js"
-      ],
-      "css": [
-        "content/content.css"
-      ],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }

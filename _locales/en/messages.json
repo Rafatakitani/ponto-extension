@@ -1,6 +1,6 @@
 {
   "ext_name": { "message": "Ponto" },
-  "ext_description": { "message": "Ponto timer in your browser: start and stop from any tab, with buttons on GitHub and Linear." },
+  "ext_description": { "message": "Ponto timer in your browser: start and stop from any tab." },
   "cmd_toggle": { "message": "Start/stop the timer" },
 
   "popup_setup_hint": { "message": "Connect the extension to your Ponto server to get started." },
@@ -71,9 +71,6 @@
   "notif_reminder_message": { "message": "Still working on \"$DESC$\"? ($ELAPSED$)", "placeholders": { "desc": { "content": "$1" }, "elapsed": { "content": "$2" } } },
   "notif_reminder_stop": { "message": "Stop timer" },
   "notif_reminder_continue": { "message": "Keep going" },
-
-  "content_start": { "message": "Start timer" },
-  "content_stop": { "message": "Stop ($ELAPSED$)", "placeholders": { "elapsed": { "content": "$1" } } },
 
   "popup_this_week": {"message": "This week"},
   "popup_recent_label": {"message": "Recent"},
