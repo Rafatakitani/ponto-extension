@@ -6,6 +6,8 @@ A extensão **Ponto** é um cliente de navegador para o time-tracker self-hosted
 [Ponto](https://github.com/alextakitani/ponto). Esta política descreve como a
 extensão lida com seus dados.
 
+_Also available in English: [PRIVACY-EN](PRIVACY-EN)._
+
 ## Resumo
 
 A extensão **não coleta, não vende e não compartilha** nenhum dado pessoal com o
