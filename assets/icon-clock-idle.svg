@@ -1,0 +1,30 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ponto (parado)">
+  <!-- Variante "apagada" (timer parado): mesma geometria do icon-clock.svg, mas
+       dessaturada. Creme -> cinza claro; dark -> cinza médio. O background.js
+       troca entre este e o colorido via chrome.action.setIcon. -->
+  <defs>
+    <style>
+      .cream { fill: #d4d4d4; }
+      .dark  { fill: #8a8a8a; }
+    </style>
+  </defs>
+
+  <!-- Clock face: fills the frame, centered, readable down to 16px -->
+  <circle class="cream" cx="512" cy="512" r="486"/>
+  <circle cx="512" cy="512" r="486" fill="none" stroke="#8a8a8a" stroke-width="50"/>
+
+  <!-- Hour marks (4 cardinal, chunky so they survive downscale) -->
+  <g class="dark">
+    <rect x="483" y="76"  width="58" height="132" rx="11"/>
+    <rect x="483" y="816" width="58" height="132" rx="11"/>
+    <rect x="76"  y="483" width="132" height="58" rx="11"/>
+    <rect x="816" y="483" width="132" height="58" rx="11"/>
+  </g>
+
+  <!-- Clock hands -->
+  <g stroke="#8a8a8a" stroke-linecap="round">
+    <line x1="512" y1="512" x2="512" y2="214" stroke-width="79"/>
+    <line x1="512" y1="512" x2="727" y2="620" stroke-width="63"/>
+    <circle cx="512" cy="512" r="63" fill="#8a8a8a"/>
+  </g>
+</svg>

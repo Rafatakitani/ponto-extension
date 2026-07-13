@@ -16,7 +16,13 @@
   },
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "__MSG_ext_name__"
+    "default_title": "__MSG_ext_name__",
+    "default_icon": {
+      "16": "assets/icon16-idle.png",
+      "32": "assets/icon32-idle.png",
+      "48": "assets/icon48-idle.png",
+      "128": "assets/icon128-idle.png"
+    }
   },
   "options_ui": {
     "page": "options/options.html",

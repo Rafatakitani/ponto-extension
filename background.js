@@ -202,20 +202,17 @@ async function handle(msg) {
   return { ok: false, status: 0, error: `unknown message: ${msg.type}` };
 }
 
-// --- Badge (QoL: o decorrido no ícone, sem abrir o popup) ---------------------
+// --- Ícone de estado (aceso rodando ↔ apagado parado) -------------------------
 
-function badgeText(entry) {
-  if (!entry) return "";
-  const secs = Math.max(0, Math.floor((Date.now() - new Date(entry.started_at).getTime()) / 1000));
-  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60);
-  if (h === 0) return `${m}m`;
-  if (h < 10) return `${h}h${String(m).padStart(2, "0")}`; // 4 chars: "2h05"
-  return `${h}h`;
-}
+// Sets de ícone: aceso (rodando) e apagado/cinza (parado). Trocados via setIcon
+// conforme o estado do timer. Antes o tempo decorrido ia no BADGE, mas o badge do
+// Chrome só cabe ~4 chars e truncava em números grandes ("4h05" -> "4h0C"). O
+// tempo agora vive no popup/app; o ícone só sinaliza rodando ↔ parado.
+const ICON_RUNNING = { 16: "assets/icon16.png", 32: "assets/icon32.png", 48: "assets/icon48.png", 128: "assets/icon128.png" };
+const ICON_IDLE = { 16: "assets/icon16-idle.png", 32: "assets/icon32-idle.png", 48: "assets/icon48-idle.png", 128: "assets/icon128-idle.png" };
 
 async function updateBadge(entry) {
-  await chrome.action.setBadgeBackgroundColor({ color: "#0d7379" });
-  await chrome.action.setBadgeText({ text: badgeText(entry) });
+  await chrome.action.setIcon({ path: entry ? ICON_RUNNING : ICON_IDLE });
   await ensureLocale();
   await chrome.action.setTitle({
     title: entry ? `${t("ext_name")} — ${entry.description || t("notif_no_description")}` : t("ext_name")
