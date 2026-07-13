@@ -77,6 +77,7 @@
   "popup_today": {"message": "Today"},
   "popup_yesterday": {"message": "Yesterday"},
   "popup_empty_ledger": {"message": "Nothing tracked this week. Start the timer above."},
+  "popup_empty_ledger_running": {"message": "Nothing finished this week yet. The timer is running."},
   "popup_tags_label_all": {"message": "Tags"},
   "popup_tags_count": {"message": "$COUNT$ tags", "placeholders": {"count": {"content": "$1", "example": "3"}}},
   "popup_tag_create": {"message": "+ Create “$NAME$”", "placeholders": {"name": {"content": "$1", "example": "backend"}}},

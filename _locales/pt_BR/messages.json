@@ -77,6 +77,7 @@
   "popup_today": {"message": "Hoje"},
   "popup_yesterday": {"message": "Ontem"},
   "popup_empty_ledger": {"message": "Nada registrado esta semana. Inicie o timer acima."},
+  "popup_empty_ledger_running": {"message": "Nada finalizado esta semana ainda. O timer está rodando."},
   "popup_tags_label_all": {"message": "Tags"},
   "popup_tags_count": {"message": "$COUNT$ tags", "placeholders": {"count": {"content": "$1", "example": "3"}}},
   "popup_tag_create": {"message": "+ Criar “$NAME$”", "placeholders": {"name": {"content": "$1", "example": "backend"}}},

@@ -377,7 +377,12 @@ function renderLedger() {
   $("#ledger").hidden = week.length === 0;
   $("#ledger-empty").hidden = week.length > 0;
   $("#week-line").hidden = week.length === 0;
-  if (week.length === 0) return;
+  if (week.length === 0) {
+    // Com timer RODANDO, "Inicie o timer acima" contradiz o estado (já iniciado).
+    // Troca a cópia: nada FINALIZADO ainda, mas o timer está rodando.
+    $("#ledger-empty p").textContent = t(state.entry ? "popup_empty_ledger_running" : "popup_empty_ledger");
+    return;
+  }
 
   const weekTotal = week.reduce((sum, e) => sum + e.duration_seconds, 0);
   $("#week-line").querySelector(".week-label").textContent = t("popup_this_week");
