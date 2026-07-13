@@ -2,10 +2,24 @@
 // host permissions). Popup/options falam por mensagens. Abaixo do router:
 // badge, alarmes, lembrete e atalho global.
 import { api } from "./lib/api.js";
+import { t, applyLocale } from "./shared/i18n.js";
+
+// Lembrete de timer esquecido: default 9h (era 2h). 0 desliga. Ver getConfig.
+const DEFAULT_REMINDER_HOURS = 9;
 
 async function getConfig() {
   const { apiUrl, token, reminderHours } = await chrome.storage.local.get(["apiUrl", "token", "reminderHours"]);
-  return { apiUrl, token, reminderHours: reminderHours ?? 2, configured: Boolean(apiUrl && token) };
+  return { apiUrl, token, reminderHours: reminderHours ?? DEFAULT_REMINDER_HOURS, configured: Boolean(apiUrl && token) };
+}
+
+// O service worker é efêmero: pode morrer e renascer entre o fetch das prefs e o
+// disparo de uma notificação, zerando o `active` do i18n em memória. Antes de
+// qualquer texto localizado (notificações), reaplica o locale a partir do
+// prefsCache (persistido em storage) — assim a notificação sai na língua do APP,
+// não na do browser. Sem prefs em cache, applyLocale cai no default (pt-BR).
+async function ensureLocale() {
+  const { prefsCache } = await chrome.storage.local.get("prefsCache");
+  await applyLocale(prefsCache?.data);
 }
 
 // Segunda-feira 00:00 no horário LOCAL, em ISO 8601 COM offset (o servidor exige
@@ -173,7 +187,12 @@ async function handle(msg) {
     // popup/options aplicarem o tema na hora, sem esperar a rede a cada abertura.
     case "prefs:get": {
       const res = await api.preferences(cfg);
-      if (res.ok) await chrome.storage.local.set({ prefsCache: { data: res.data, fetchedAt: Date.now() } });
+      if (res.ok) {
+        await chrome.storage.local.set({ prefsCache: { data: res.data, fetchedAt: Date.now() } });
+        // Aplica já no SW vivo: as notificações que ele disparar em seguida saem
+        // no idioma do app sem esperar o próximo ensureLocale.
+        await applyLocale(res.data);
+      }
       return res;
     }
 
@@ -197,8 +216,9 @@ function badgeText(entry) {
 async function updateBadge(entry) {
   await chrome.action.setBadgeBackgroundColor({ color: "#0d7379" });
   await chrome.action.setBadgeText({ text: badgeText(entry) });
+  await ensureLocale();
   await chrome.action.setTitle({
-    title: entry ? `${chrome.i18n.getMessage("ext_name")} — ${entry.description || chrome.i18n.getMessage("notif_no_description")}` : chrome.i18n.getMessage("ext_name")
+    title: entry ? `${t("ext_name")} — ${entry.description || t("notif_no_description")}` : t("ext_name")
   });
 }
 
@@ -238,12 +258,14 @@ async function maybeRemind(cfg, entry) {
   // snooze aqui, cutuca uma vez por janela mesmo que o usuário só dispense.
   await chrome.storage.local.set({ snoozeUntil: Date.now() + cfg.reminderHours * 3600000 });
 
+  // Idioma do app (não do browser) — o SW pode ter renascido desde o prefs:get.
+  await ensureLocale();
   chrome.notifications.create("ponto-reminder", {
     type: "basic",
     iconUrl: "assets/icon128.png",
-    title: chrome.i18n.getMessage("notif_reminder_title"),
-    message: chrome.i18n.getMessage("notif_reminder_message", [entry.description || chrome.i18n.getMessage("notif_no_description"), formatElapsed(elapsed)]),
-    buttons: [{ title: chrome.i18n.getMessage("notif_reminder_stop") }, { title: chrome.i18n.getMessage("notif_reminder_continue") }],
+    title: t("notif_reminder_title"),
+    message: t("notif_reminder_message", [entry.description || t("notif_no_description"), formatElapsed(elapsed)]),
+    buttons: [{ title: t("notif_reminder_stop") }, { title: t("notif_reminder_continue") }],
     requireInteraction: true
   });
 }
@@ -271,26 +293,29 @@ chrome.commands.onCommand.addListener(async (command) => {
   const current = await api.getTimer(cfg);
   if (!current.ok) return;
 
+  // Idioma do app antes de qualquer notify() deste handler (o SW pode ter
+  // renascido). Aplicado uma vez; os t() abaixo já resolvem no locale certo.
+  await ensureLocale();
   if (current.data) {
     const res = await api.stopTimer(cfg);
     if (res.ok || res.status === 404) {
       await setTimerCache(null);
       notify(res.status === 204
-        ? chrome.i18n.getMessage("notif_discarded")
-        : chrome.i18n.getMessage("notif_stopped", [formatElapsed(res.data ? new Date(res.data.ended_at) - new Date(res.data.started_at) : 0)]));
+        ? t("notif_discarded")
+        : t("notif_stopped", [formatElapsed(res.data ? new Date(res.data.ended_at) - new Date(res.data.started_at) : 0)]));
     }
   } else {
     // Mesma regra do popup: projeto default explícito no project_id.
     const projects = await api.projects(cfg);
     const def = projects.ok ? (projects.data || []).find((p) => p.default && !p.archived_at) : null;
     const res = await api.startTimer(cfg, { description: "", project_id: def ? def.id : null, task_id: null });
-    if (res.ok) { await setTimerCache(res.data); notify(chrome.i18n.getMessage("notif_started")); }
+    if (res.ok) { await setTimerCache(res.data); notify(t("notif_started")); }
     else if (res.status === 409) await refreshTimer(cfg);
   }
 });
 
 function notify(message) {
-  chrome.notifications.create({ type: "basic", iconUrl: "assets/icon128.png", title: chrome.i18n.getMessage("ext_name"), message });
+  chrome.notifications.create({ type: "basic", iconUrl: "assets/icon128.png", title: t("ext_name"), message });
 }
 
 // --- Boot do SW: badge/alarme coerentes já na carga ----------------------------

@@ -24,7 +24,7 @@ function normalizedUrl() {
 chrome.storage.local.get(["apiUrl", "token", "reminderHours"]).then((cfg) => {
   if (cfg.apiUrl) $("#api-url").value = cfg.apiUrl;
   if (cfg.token) $("#token").value = cfg.token;
-  $("#reminder-hours").value = cfg.reminderHours ?? 2;
+  $("#reminder-hours").value = cfg.reminderHours ?? 9;
 });
 
 // Tema/acento do servidor no <html> (mesmo modelo do popup): cache na hora,
