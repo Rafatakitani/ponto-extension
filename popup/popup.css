@@ -214,6 +214,25 @@ body { width: 360px; }
 }
 .clock { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
 .run-started { font-size: 11px; color: var(--text-subtle); }
+
+/* Hora de início editável: botão discreto (texto + lápis) que abre o editor. */
+.run-started-edit {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: none; padding: 2px 4px; margin: -2px -4px;
+  border-radius: var(--radius-sm); cursor: pointer; color: inherit;
+}
+.run-started-edit .pencil { color: var(--text-subtle); opacity: 0.55; transition: opacity 120ms; }
+.run-started-edit:hover { background: color-mix(in srgb, var(--border) 40%, transparent); }
+.run-started-edit:hover .run-started { color: var(--text); }
+.run-started-edit:hover .pencil { opacity: 1; }
+.run-started-edit:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Editor do horário de início: rótulo + datetime-local de largura total. */
+.start-edit { margin-top: 4px; }
+.start-edit label {
+  display: block; font-size: 11px; color: var(--text-subtle); margin-bottom: 4px;
+}
+#start-input { width: 100%; }
 /* Pulso do stop enquanto roda (única animação não-solicitada; derivada de --danger). */
 @media (prefers-reduced-motion: no-preference) {
   .compose-card[data-running="true"] .round-btn {

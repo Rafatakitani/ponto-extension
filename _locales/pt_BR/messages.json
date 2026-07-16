@@ -89,5 +89,8 @@
   "popup_mode_timer": {"message": "Voltar ao timer"},
   "popup_tasks_head": {"message": "Tasks"},
   "popup_refresh": {"message": "Atualizar"},
-  "popup_started_at": {"message": "iniciado às $TIME$", "placeholders": {"time": {"content": "$1", "example": "14:05"}}}
+  "popup_started_at": {"message": "iniciado às $TIME$", "placeholders": {"time": {"content": "$1", "example": "14:05"}}},
+  "popup_start_edit_label": {"message": "Início"},
+  "popup_start_edit": {"message": "Editar horário de início"},
+  "popup_start_future_error": {"message": "O início não pode ser no futuro."}
 }

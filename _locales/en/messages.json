@@ -89,5 +89,8 @@
   "popup_mode_timer": {"message": "Back to timer"},
   "popup_tasks_head": {"message": "Tasks"},
   "popup_refresh": {"message": "Refresh"},
-  "popup_started_at": {"message": "started $TIME$", "placeholders": {"time": {"content": "$1", "example": "2:05 PM"}}}
+  "popup_started_at": {"message": "started $TIME$", "placeholders": {"time": {"content": "$1", "example": "2:05 PM"}}},
+  "popup_start_edit_label": {"message": "Start"},
+  "popup_start_edit": {"message": "Edit start time"},
+  "popup_start_future_error": {"message": "Start time can't be in the future."}
 }

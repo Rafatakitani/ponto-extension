@@ -57,7 +57,7 @@ async function setTimerCache(entry) {
 function timerEntriesDiffer(a, b) {
   if (Boolean(a) !== Boolean(b)) return true;
   if (!a && !b) return false;
-  for (const key of ["id", "description", "project_id", "task_id", "ended_at", "billable"]) {
+  for (const key of ["id", "description", "project_id", "task_id", "started_at", "ended_at", "billable"]) {
     if (a[key] !== b[key]) return true;
   }
   return false;

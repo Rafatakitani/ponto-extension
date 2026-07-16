@@ -44,7 +44,9 @@ const state = {
   entries: [],            // 1ª página do histórico (finalizadas), started_at DESC
   projectId: null, taskId: null, tagIds: new Set(),
   mode: "timer",          // "timer" | "manual"
-  clockHandle: null
+  clockHandle: null,
+  editingStart: false,    // editando o horário de início do timer rodando?
+  startEditInitial: null  // valor do campo ao abrir a edição (detecta no-op)
 };
 
 function show(viewId) {
@@ -132,11 +134,53 @@ function renderRunning() {
   renderBillableChip();
 
   $("#run-started").textContent = t("popup_started_at", formatClockTime(new Date(entry.started_at)));
+  $("#btn-edit-start").setAttribute("aria-label", t("popup_start_edit"));
+  $("#btn-edit-start").title = t("popup_start_edit");
+
+  // Alterna entre a linha do cronômetro e o editor de início. Ao editar, o campo
+  // datetime-local (só preenchido ao ENTRAR em edição) toma o lugar do elapsed.
+  $("#run-timer").hidden = state.editingStart;
+  $("#start-edit").hidden = !state.editingStart;
 
   clearInterval(state.clockHandle);
   const tick = () => { $("#clock").textContent = formatDuration((Date.now() - new Date(entry.started_at).getTime()) / 1000); };
   tick();
   state.clockHandle = setInterval(tick, 500);
+}
+
+// Entra no modo de edição do horário de início: preenche o campo com o started_at
+// atual (em hora local, com segundos) e foca. O render cuida da troca de layout.
+function beginEditStart() {
+  if (!state.entry) return;
+  state.editingStart = true;
+  // Guarda o valor inicial do campo (já truncado à precisão do input) pra o commit
+  // detectar "não mudou nada" sem tropeçar nos milissegundos do started_at do servidor.
+  $("#start-input").value = state.startEditInitial = toLocalInput(new Date(state.entry.started_at));
+  renderCompose();
+  $("#start-input").focus();
+}
+
+function cancelEditStart() {
+  state.editingStart = false;
+  renderCompose();
+}
+
+// Confirma a edição: lê o datetime-local como hora LOCAL, valida (não pode ser no
+// futuro) e persiste via PATCH na entry rodando. O elapsed recalcula sozinho no
+// próximo tick, pois deriva de state.entry.started_at (que patchRunning atualiza).
+function commitEditStart() {
+  if (!state.entry) return;
+  const raw = $("#start-input").value;
+  if (!raw) return cancelEditStart();
+  const next = new Date(raw);                 // formato sem offset ⇒ interpretado local
+  if (isNaN(next.getTime())) return cancelEditStart();
+  // Futuro ⇒ elapsed negativo: avisa e mantém o editor aberto pra correção.
+  if (next.getTime() > Date.now()) { toast(t("popup_start_future_error")); $("#start-input").focus(); return; }
+
+  state.editingStart = false;
+  // Só faz PATCH se o valor EXIBIDO mudou (evita no-op que dropa sub-segundos).
+  if (raw !== state.startEditInitial) patchRunning({ started_at: next.toISOString() });
+  renderCompose();
 }
 
 // Persiste um atributo da entry RODANDO (PATCH). Usado quando a meta-row é editada
@@ -643,9 +687,12 @@ function parseDuration(raw) {
 function formatDurationClock(totalMinutes) {
   return `${Math.floor(totalMinutes / 60)}:${String(totalMinutes % 60).padStart(2, "0")}`;
 }
+// Valor pro <input type=datetime-local step=1>: YYYY-MM-DDTHH:MM:SS em hora LOCAL
+// (o input não leva timezone; ler de volta com new Date(v) reinterpreta como local).
 function toLocalInput(date) {
   const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+    + `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 function toTimeInput(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -699,6 +746,7 @@ function enterIdle() {
 // a próxima (bug: descrição não limpava após o stop).
 function resetCompose() {
   $("#description").value = "";
+  state.editingStart = false;
   state.taskId = null;
   state.tasks = [];
   state.tagIds = new Set();
@@ -794,6 +842,20 @@ $("#btn-billable").addEventListener("click", () => {
   $("#btn-billable").dataset.touched = "1";
   $("#btn-billable").setAttribute("aria-pressed", on ? "false" : "true");
   if (state.entry) patchRunning({ billable: !on });
+});
+
+// Horário de início editável (timer rodando): lápis abre o editor; Enter/blur
+// confirmam, Esc cancela. O flag `escaping` evita que o blur disparado PELO Esc
+// re-comite o valor que acabou de ser descartado.
+$("#btn-edit-start").addEventListener("click", beginEditStart);
+let escaping = false;
+$("#start-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); $("#start-input").blur(); }
+  else if (e.key === "Escape") { e.preventDefault(); escaping = true; cancelEditStart(); }
+});
+$("#start-input").addEventListener("blur", () => {
+  if (escaping) { escaping = false; return; }
+  if (state.editingStart) commitEditStart();
 });
 
 // Campos manuais ligados.
