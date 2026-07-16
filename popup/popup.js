@@ -24,6 +24,8 @@ function applyI18n() {
   $("#tags-trigger").setAttribute("aria-label", t("popup_tags_label"));
   $("#btn-billable").setAttribute("aria-label", t("popup_billable"));
   $("#btn-billable").title = t("popup_billable");
+  $("#btn-edit-start").setAttribute("aria-label", t("popup_start_edit"));
+  $("#btn-edit-start").title = t("popup_start_edit");
   $("#btn-refresh").setAttribute("aria-label", t("popup_refresh"));
   $("#btn-refresh").title = t("popup_refresh");
   $("#link-app").setAttribute("aria-label", t("popup_open_app"));
@@ -134,8 +136,6 @@ function renderRunning() {
   renderBillableChip();
 
   $("#run-started").textContent = t("popup_started_at", formatClockTime(new Date(entry.started_at)));
-  $("#btn-edit-start").setAttribute("aria-label", t("popup_start_edit"));
-  $("#btn-edit-start").title = t("popup_start_edit");
 
   // Alterna entre a linha do cronômetro e o editor de início. Ao editar, o campo
   // datetime-local (só preenchido ao ENTRAR em edição) toma o lugar do elapsed.
